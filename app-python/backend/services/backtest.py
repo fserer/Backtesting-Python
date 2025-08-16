@@ -1,0 +1,444 @@
+import pandas as pd
+import numpy as np
+import vectorbt as vbt
+from typing import Dict, List, Any, Optional
+import logging
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+def run_backtest(
+    df: pd.DataFrame,
+    threshold_entry: float,
+    threshold_exit: float,
+    fees: float,
+    slippage: float,
+    init_cash: float,
+    apply_to: str = "v",
+    override_freq: Optional[str] = None,
+    strategy_type: str = "threshold",
+    crossover_strategy: dict = None,
+    period: str = "all"
+) -> Dict[str, Any]:
+    """
+    Ejecuta un backtest usando vectorbt.
+    
+    Args:
+        df: DataFrame con columnas 't', 'v_transformed', 'usd_transformed'
+        threshold_entry: Umbral de entrada
+        threshold_exit: Umbral de salida
+        fees: Comisiones (ej: 0.0005 = 0.05%)
+        slippage: Slippage (ej: 0.0002 = 0.02%)
+        init_cash: Capital inicial
+        apply_to: A qué columna aplicar las señales ('v' o 'usd')
+        override_freq: Frecuencia manual ('1D' o '1H')
+        
+    Returns:
+        Dict con resultados del backtest
+    """
+    try:
+        # Filtrar datos por período
+        df_filtered = filter_data_by_period(df, period)
+        
+        if df_filtered.empty:
+            raise ValueError(f"No hay datos disponibles para el período '{period}'")
+        
+        logger.info(f"Período seleccionado: {period} - {len(df_filtered)} registros de {len(df)} totales")
+        
+        # Determinar frecuencia
+        freq = determine_frequency(df_filtered, override_freq)
+        
+        # Generar señales
+        signals = generate_signals(df_filtered, threshold_entry, threshold_exit, apply_to, strategy_type, crossover_strategy)
+        
+        # Preparar datos para vectorbt
+        close_prices = df_filtered['usd_transformed'].values
+        entries = signals['entries'].values
+        exits = signals['exits'].values
+        
+        # Configurar parámetros de vectorbt
+        vbt_settings = {
+            'close': close_prices,
+            'entries': entries,
+            'exits': exits,
+            'fees': fees,
+            'slippage': slippage,
+            'init_cash': init_cash,
+            'freq': freq,
+            'accumulate': False,
+            'upon_long_conflict': 'ignore',
+            'upon_short_conflict': 'ignore'
+        }
+        
+        # Ejecutar backtest
+        portfolio = vbt.Portfolio.from_signals(**vbt_settings)
+        
+        # Calcular métricas
+        results = calculate_metrics(portfolio, df_filtered)
+        
+        logger.info(f"Backtest completado: {results['results']['trades']} trades, {results['results']['total_return']:.2%} retorno")
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error en backtest: {str(e)}")
+        raise e
+
+def filter_data_by_period(df: pd.DataFrame, period: str) -> pd.DataFrame:
+    """
+    Filtra los datos por el período especificado.
+    
+    Args:
+        df: DataFrame con columna 't' (timestamp)
+        period: Período a filtrar ('1w', '1m', '3m', '6m', '1y', 'ytd', '2y', '4y', '6y', '8y', '10y', 'all')
+    
+    Returns:
+        DataFrame filtrado
+    """
+    if period == "all":
+        return df
+    
+    # Obtener la fecha más reciente y asegurar tipo consistente
+    latest_date = pd.to_datetime(df['t'].max())
+    
+    # Calcular la fecha de inicio según el período
+    if period == "1w":
+        start_date = latest_date - pd.Timedelta(days=7)
+    elif period == "1m":
+        start_date = latest_date - pd.Timedelta(days=30)
+    elif period == "3m":
+        start_date = latest_date - pd.Timedelta(days=90)
+    elif period == "6m":
+        start_date = latest_date - pd.Timedelta(days=180)
+    elif period == "1y":
+        start_date = latest_date - pd.Timedelta(days=365)
+    elif period == "ytd":
+        # Año hasta la fecha (desde el 1 de enero del año actual)
+        start_date = pd.Timestamp(latest_date.year, 1, 1, tz=latest_date.tz)
+    elif period == "2y":
+        start_date = latest_date - pd.Timedelta(days=2*365)
+    elif period == "4y":
+        start_date = latest_date - pd.Timedelta(days=4*365)
+    elif period == "6y":
+        start_date = latest_date - pd.Timedelta(days=6*365)
+    elif period == "8y":
+        start_date = latest_date - pd.Timedelta(days=8*365)
+    elif period == "10y":
+        start_date = latest_date - pd.Timedelta(days=10*365)
+    else:
+        return df
+    
+    # Filtrar datos
+    filtered_df = df[df['t'] >= start_date].copy()
+    
+    logger.info(f"Filtrado por período '{period}': {len(filtered_df)} registros desde {start_date.strftime('%Y-%m-%d')} hasta {latest_date.strftime('%Y-%m-%d')}")
+    
+    return filtered_df
+
+def determine_frequency(df: pd.DataFrame, override_freq: Optional[str] = None) -> str:
+    """
+    Determina la frecuencia de los datos.
+    """
+    if override_freq:
+        return override_freq
+    
+    # Calcular diferencias de tiempo
+    time_diffs = df['t'].diff().dropna()
+    time_diffs_seconds = time_diffs.dt.total_seconds()
+    
+    if len(time_diffs_seconds) == 0:
+        return '1H'
+    
+    # Calcular el delta modal
+    mode_diff = time_diffs_seconds.mode().iloc[0]
+    
+    # Definir rangos de tolerancia (±5%)
+    daily_range = (86400 * 0.95, 86400 * 1.05)
+    hourly_range = (3600 * 0.95, 3600 * 1.05)
+    
+    if daily_range[0] <= mode_diff <= daily_range[1]:
+        return '1D'
+    elif hourly_range[0] <= mode_diff <= hourly_range[1]:
+        return '1H'
+    else:
+        return '1H'  # Default
+
+def generate_signals(
+    df: pd.DataFrame, 
+    threshold_entry: float, 
+    threshold_exit: float, 
+    apply_to: str,
+    strategy_type: str = "threshold",
+    crossover_strategy: dict = None
+) -> pd.DataFrame:
+    """
+    Genera señales de entrada y salida basadas en diferentes estrategias.
+    
+    Args:
+        df: DataFrame con datos transformados
+        threshold_entry: Umbral de entrada (solo para strategy_type="threshold")
+        threshold_exit: Umbral de salida (solo para strategy_type="threshold")
+        apply_to: Columna a usar para señales ('v' o 'usd')
+        strategy_type: 'threshold' o 'crossover'
+        crossover_strategy: Configuración para estrategia de cruce
+        
+    Returns:
+        DataFrame con columnas 'entries' y 'exits'
+    """
+    try:
+        if strategy_type == "threshold":
+            return generate_threshold_signals(df, threshold_entry, threshold_exit, apply_to)
+        elif strategy_type == "crossover" and crossover_strategy:
+            return generate_crossover_signals(df, apply_to, crossover_strategy)
+        else:
+            raise ValueError(f"Estrategia no válida: {strategy_type}")
+        
+    except Exception as e:
+        logger.error(f"Error generando señales: {str(e)}")
+        raise e
+
+def generate_threshold_signals(
+    df: pd.DataFrame, 
+    threshold_entry: float, 
+    threshold_exit: float, 
+    apply_to: str
+) -> pd.DataFrame:
+    """
+    Genera señales basadas en cruces de umbral (estrategia original).
+    """
+    # Seleccionar columna para señales
+    signal_column = f'{apply_to}_transformed'
+    
+    if signal_column not in df.columns:
+        raise ValueError(f"Columna {signal_column} no encontrada")
+    
+    series = df[signal_column]
+    
+    # Generar señales de entrada (crossover hacia arriba)
+    entries = (
+        (series.shift(1) < threshold_entry) & 
+        (series >= threshold_entry)
+    )
+    
+    # Generar señales de salida (crossover hacia abajo)
+    exits = (
+        (series.shift(1) > threshold_exit) & 
+        (series <= threshold_exit)
+    )
+    
+    # Crear DataFrame de señales
+    signals = pd.DataFrame({
+        'entries': entries,
+        'exits': exits
+    })
+    
+    # Rellenar NaN con False
+    signals = signals.fillna(False)
+    
+    logger.info(f"Señales de umbral generadas: {signals['entries'].sum()} entradas, {signals['exits'].sum()} salidas")
+    
+    return signals
+
+def generate_crossover_signals(df: pd.DataFrame, apply_to: str, crossover_strategy: dict) -> pd.DataFrame:
+    """
+    Genera señales basadas en cruces de medias móviles.
+    
+    Args:
+        df: DataFrame con datos transformados
+        apply_to: 'v' o 'usd'
+        crossover_strategy: Configuración de la estrategia de cruce
+    
+    Returns:
+        DataFrame con columnas 'entries', 'exits'
+    """
+    # Seleccionar columna para señales
+    signal_column = f'{apply_to}_transformed'
+    
+    if signal_column not in df.columns:
+        raise ValueError(f"Columna {signal_column} no encontrada")
+    
+    series = df[signal_column]
+    
+    # Calcular medias móviles para entrada
+    if crossover_strategy['entry_type'] == 'sma':
+        entry_fast = series.rolling(window=crossover_strategy['entry_fast_period'], min_periods=1).mean()
+        entry_slow = series.rolling(window=crossover_strategy['entry_slow_period'], min_periods=1).mean()
+    else:  # ema
+        entry_fast = series.ewm(span=crossover_strategy['entry_fast_period']).mean()
+        entry_slow = series.ewm(span=crossover_strategy['entry_slow_period']).mean()
+    
+    # Calcular medias móviles para salida
+    if crossover_strategy['exit_type'] == 'sma':
+        exit_fast = series.rolling(window=crossover_strategy['exit_fast_period'], min_periods=1).mean()
+        exit_slow = series.rolling(window=crossover_strategy['exit_slow_period'], min_periods=1).mean()
+    else:  # ema
+        exit_fast = series.ewm(span=crossover_strategy['exit_fast_period']).mean()
+        exit_slow = series.ewm(span=crossover_strategy['exit_slow_period']).mean()
+    
+    # Generar señales de entrada según la dirección configurada
+    if crossover_strategy['entry_direction'] == 'up':
+        # Cruce al alza: fast cruza por encima de slow
+        entries = (entry_fast > entry_slow) & (entry_fast.shift(1) <= entry_slow.shift(1))
+    else:
+        # Cruce a la baja: fast cruza por debajo de slow
+        entries = (entry_fast < entry_slow) & (entry_fast.shift(1) >= entry_slow.shift(1))
+    
+    # Generar señales de salida según la dirección configurada
+    if crossover_strategy['exit_direction'] == 'up':
+        # Cruce al alza: fast cruza por encima de slow
+        exits = (exit_fast > exit_slow) & (exit_fast.shift(1) <= exit_slow.shift(1))
+    else:
+        # Cruce a la baja: fast cruza por debajo de slow
+        exits = (exit_fast < exit_slow) & (exit_fast.shift(1) >= exit_slow.shift(1))
+    
+    # Crear DataFrame de señales
+    signals = pd.DataFrame({
+        'entries': entries,
+        'exits': exits
+    })
+    
+    # Rellenar NaN con False
+    signals = signals.fillna(False)
+    
+    logger.info(f"Señales de cruce generadas: {signals['entries'].sum()} entradas, {signals['exits'].sum()} salidas")
+    
+    return signals
+
+def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Calcula métricas del backtest.
+    
+    Args:
+        portfolio: Objeto Portfolio de vectorbt
+        df: DataFrame original con timestamps
+        
+    Returns:
+        Dict con métricas y curva de equity
+    """
+    try:
+        # Métricas básicas
+        total_return = portfolio.total_return()
+        sharpe_ratio = portfolio.sharpe_ratio()
+        max_drawdown = portfolio.max_drawdown()
+        trades_count = len(portfolio.trades.records_readable)
+        
+        # Información detallada de operaciones
+        trades_data = []
+        if hasattr(portfolio.trades, 'records_readable') and len(portfolio.trades.records_readable) > 0:
+            trades_df = portfolio.trades.records_readable
+            
+            # Debug: imprimir las columnas disponibles y datos completos
+            logger.info(f"Columnas disponibles en trades: {list(trades_df.columns)}")
+            logger.info(f"Shape de trades_df: {trades_df.shape}")
+            logger.info(f"Primera fila de trades: {trades_df.iloc[0].to_dict()}")
+            logger.info(f"Todas las filas de trades:")
+            for i, row in trades_df.iterrows():
+                logger.info(f"Trade {i}: {row.to_dict()}")
+            
+            for idx, trade in trades_df.iterrows():
+                try:
+                    # Obtener índices de entrada y salida - usar los nombres correctos de vectorbt
+                    entry_idx = int(trade.get('Entry Timestamp', trade.get('entry_timestamp', 0)))
+                    exit_idx = int(trade.get('Exit Timestamp', trade.get('exit_timestamp', 0)))
+                    
+                    logger.info(f"Procesando trade {idx}: entry_idx={entry_idx}, exit_idx={exit_idx}")
+                    logger.info(f"DataFrame length: {len(df)}")
+                    
+                    # Obtener timestamps
+                    if entry_idx < len(df) and exit_idx < len(df):
+                        entry_timestamp = df['t'].iloc[entry_idx].isoformat()
+                        exit_timestamp = df['t'].iloc[exit_idx].isoformat()
+                        logger.info(f"Timestamps: entry={entry_timestamp}, exit={exit_timestamp}")
+                    else:
+                        entry_timestamp = None
+                        exit_timestamp = None
+                        logger.warning(f"Índices fuera de rango: entry_idx={entry_idx}, exit_idx={exit_idx}, df_length={len(df)}")
+                    
+                    # Usar los precios promedio de vectorbt en lugar de los del DataFrame
+                    entry_price = float(trade.get('Avg Entry Price', trade.get('avg_entry_price', 0)))
+                    exit_price = float(trade.get('Avg Exit Price', trade.get('avg_exit_price', 0)))
+                    
+                    logger.info(f"Precios vectorbt: entry={entry_price}, exit={exit_price}")
+                    
+                    # Calcular duración en períodos
+                    duration_periods = exit_idx - entry_idx if entry_idx < len(df) and exit_idx < len(df) else 0
+                    
+                    trades_data.append({
+                        'entry_date': entry_timestamp,
+                        'exit_date': exit_timestamp,
+                        'entry_price': entry_price,
+                        'exit_price': exit_price,
+                        'size': float(trade.get('Size', trade.get('size', 0))),
+                        'pnl': float(trade.get('PnL', trade.get('pnl', 0))),
+                        'return_pct': float(trade.get('Return', trade.get('return', 0))),
+                        'duration': duration_periods,
+                        'entry_fees': float(trade.get('Entry Fees', trade.get('entry_fees', 0))),
+                        'exit_fees': float(trade.get('Exit Fees', trade.get('exit_fees', 0)))
+                    })
+                except Exception as e:
+                    logger.error(f"Error procesando trade {idx}: {str(e)}")
+                    logger.error(f"Datos del trade: {trade.to_dict()}")
+                    continue
+        
+        # Curva de equity
+        equity_curve = portfolio.value()
+        equity_data = []
+        
+        # Alinear timestamps con equity curve
+        timestamps = df['t'].iloc[:len(equity_curve)].tolist()
+        
+        for i, (timestamp, equity) in enumerate(zip(timestamps, equity_curve)):
+            equity_data.append({
+                'timestamp': timestamp.isoformat(),
+                'equity': float(equity)
+            })
+        
+        # Determinar frecuencia para respuesta
+        freq = determine_frequency(df)
+        
+        # Manejar valores infinitos y NaN
+        def safe_float(value):
+            if pd.isna(value) or np.isinf(value):
+                return 0.0
+            return float(value)
+        
+        results = {
+            'results': {
+                'total_return': safe_float(total_return),
+                'sharpe': safe_float(sharpe_ratio),
+                'max_drawdown': safe_float(max_drawdown),
+                'trades': int(trades_count)
+            },
+            'equity': equity_data,
+            'trades': trades_data,
+            'freq': freq
+        }
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error calculando métricas: {str(e)}")
+        raise e
+
+def validate_backtest_params(
+    threshold_entry: float,
+    threshold_exit: float,
+    fees: float,
+    slippage: float,
+    init_cash: float
+) -> None:
+    """
+    Valida los parámetros del backtest.
+    """
+    if fees < 0 or fees > 0.1:
+        raise ValueError("Fees debe estar entre 0 y 0.1 (10%)")
+    
+    if slippage < 0 or slippage > 0.1:
+        raise ValueError("Slippage debe estar entre 0 y 0.1 (10%)")
+    
+    if init_cash <= 0:
+        raise ValueError("Capital inicial debe ser positivo")
+    
+    # Los thresholds pueden ser cualquier valor numérico
+    if not isinstance(threshold_entry, (int, float)) or not isinstance(threshold_exit, (int, float)):
+        raise ValueError("Los thresholds deben ser valores numéricos")
