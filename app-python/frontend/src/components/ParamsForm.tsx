@@ -46,7 +46,11 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       dataset2_ma_period: 30,
       entry_direction: 'up' as 'up' | 'down',
       exit_direction: 'down' as 'up' | 'down',
-      price_dataset_id: 0
+      price_dataset_id: 0,
+      take_profit_pct: 3.0,
+      stop_loss_pct: 1.0,
+      use_take_profit: true,
+      use_stop_loss: true
     },
     period: 'all' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | 'all',
     fees: 0.0005,
@@ -565,7 +569,11 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
                 dataset2_ma_type: formData.multi_dataset_crossover_strategy.dataset2_ma_type,
                 dataset2_ma_period: formData.multi_dataset_crossover_strategy.dataset2_ma_period,
                 entry_direction: formData.multi_dataset_crossover_strategy.entry_direction,
-                exit_direction: formData.multi_dataset_crossover_strategy.exit_direction
+                exit_direction: formData.multi_dataset_crossover_strategy.exit_direction,
+                take_profit_pct: formData.multi_dataset_crossover_strategy.take_profit_pct,
+                stop_loss_pct: formData.multi_dataset_crossover_strategy.stop_loss_pct,
+                use_take_profit: formData.multi_dataset_crossover_strategy.use_take_profit,
+                use_stop_loss: formData.multi_dataset_crossover_strategy.use_stop_loss
               }}
               onStrategyChange={updateMultiDatasetStrategy}
             />

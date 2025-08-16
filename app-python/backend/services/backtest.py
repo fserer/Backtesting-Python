@@ -518,7 +518,7 @@ def run_multi_dataset_backtest(
         
         # Generar señales de cruce entre datasets
         signals = generate_multi_dataset_crossover_signals_impl(
-            df1_filtered, df2_filtered, strategy
+            df1_filtered, df2_filtered, price_df_filtered, strategy
         )
         
         # Alinear todos los arrays al mismo tamaño (usar el más pequeño)
@@ -563,6 +563,7 @@ def run_multi_dataset_backtest(
 def generate_multi_dataset_crossover_signals_impl(
     df1: pd.DataFrame, 
     df2: pd.DataFrame, 
+    price_df: pd.DataFrame,
     strategy: dict
 ) -> pd.DataFrame:
     """
@@ -629,6 +630,12 @@ def generate_multi_dataset_crossover_signals_impl(
             # Cruce a la baja: ma1 cruza por debajo de ma2
             exits = (ma1_aligned < ma2_aligned) & (ma1_aligned.shift(1) >= ma2_aligned.shift(1))
         
+        # Aplicar Take Profit y Stop Loss si están habilitados
+        if strategy.get('use_take_profit', False) or strategy.get('use_stop_loss', False):
+            exits = apply_take_profit_stop_loss(
+                price_df, entries, exits, strategy
+            )
+        
         # Crear DataFrame de señales
         signals = pd.DataFrame({
             'entries': entries,
@@ -644,4 +651,90 @@ def generate_multi_dataset_crossover_signals_impl(
         
     except Exception as e:
         logger.error(f"Error generando señales multi-dataset: {str(e)}")
+        raise e
+
+def apply_take_profit_stop_loss(
+    price_df: pd.DataFrame,
+    entries: pd.Series,
+    exits: pd.Series,
+    strategy: dict
+) -> pd.Series:
+    """
+    Aplica lógica de Take Profit y Stop Loss basada en porcentajes del precio de entrada.
+    
+    Args:
+        price_df: DataFrame con precios USD
+        entries: Serie de señales de entrada
+        exits: Serie de señales de salida originales
+        strategy: Configuración de la estrategia con TP/SL
+        
+    Returns:
+        Serie de señales de salida modificada con TP/SL
+    """
+    try:
+        prices = price_df['usd'].values
+        take_profit_pct = strategy.get('take_profit_pct', 3.0) / 100.0
+        stop_loss_pct = strategy.get('stop_loss_pct', 1.0) / 100.0
+        use_take_profit = strategy.get('use_take_profit', True)
+        use_stop_loss = strategy.get('use_stop_loss', True)
+        
+        # Crear copia de las señales de salida
+        modified_exits = exits.copy()
+        
+        # Encontrar posiciones de entrada (usar índices relativos)
+        entry_positions = entries[entries == True].index.tolist()
+        
+        logger.info(f"Aplicando TP/SL: {len(entry_positions)} entradas, TP: {take_profit_pct*100}%, SL: {stop_loss_pct*100}%")
+        
+        for entry_idx in entry_positions:
+            # Convertir índice del DataFrame a índice del array
+            entry_array_idx = entries.index.get_loc(entry_idx)
+            entry_price = prices[entry_array_idx]
+            
+            # Buscar la siguiente señal de salida después de esta entrada
+            next_exit_mask = exits[entry_idx:].index[exits[entry_idx:] == True]
+            
+            if len(next_exit_mask) == 0:
+                # No hay señal de salida, usar TP/SL hasta el final
+                start_array_idx = entry_array_idx + 1
+                end_array_idx = len(prices)
+            else:
+                # Hay señal de salida, usar TP/SL hasta esa señal
+                next_exit_idx = next_exit_mask[0]
+                next_exit_array_idx = exits.index.get_loc(next_exit_idx)
+                start_array_idx = entry_array_idx + 1
+                end_array_idx = next_exit_array_idx
+            
+            # Verificar TP/SL en cada período después de la entrada
+            for i in range(start_array_idx, end_array_idx):
+                if i >= len(prices):
+                    break
+                    
+                current_price = prices[i]
+                price_change_pct = (current_price - entry_price) / entry_price
+                
+                # Take Profit
+                if use_take_profit and price_change_pct >= take_profit_pct:
+                    # Convertir índice del array de vuelta al índice del DataFrame
+                    array_to_df_idx = entries.index[i]
+                    modified_exits.loc[array_to_df_idx] = True
+                    logger.debug(f"Take Profit activado en posición {i}: {price_change_pct*100:.2f}%")
+                    break
+                
+                # Stop Loss
+                if use_stop_loss and price_change_pct <= -stop_loss_pct:
+                    # Convertir índice del array de vuelta al índice del DataFrame
+                    array_to_df_idx = entries.index[i]
+                    modified_exits.loc[array_to_df_idx] = True
+                    logger.debug(f"Stop Loss activado en posición {i}: {price_change_pct*100:.2f}%")
+                    break
+        
+        tp_exits = (modified_exits & ~exits).sum()
+        sl_exits = (modified_exits & ~exits).sum()
+        logger.info(f"TP/SL aplicado: {tp_exits} salidas por TP, {sl_exits} salidas por SL")
+        
+        return modified_exits
+        
+    except Exception as e:
+        logger.error(f"Error aplicando TP/SL: {str(e)}")
         raise e

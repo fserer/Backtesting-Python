@@ -24,6 +24,10 @@ interface MultiDatasetSelectorProps {
     dataset2_ma_period: number;
     entry_direction: 'up' | 'down';
     exit_direction: 'up' | 'down';
+    take_profit_pct: number;
+    stop_loss_pct: number;
+    use_take_profit: boolean;
+    use_stop_loss: boolean;
   };
   onStrategyChange: (field: string, value: any) => void;
 }
@@ -281,6 +285,78 @@ export function MultiDatasetSelector({
           </div>
         </div>
 
+        {/* Take Profit y Stop Loss */}
+        <div className="space-y-3 p-4 border rounded-lg bg-orange-50">
+          <Label className="text-sm font-medium text-orange-700 flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Take Profit y Stop Loss
+          </Label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Take Profit */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="use-take-profit"
+                  checked={strategy.use_take_profit}
+                  onChange={(e) => onStrategyChange('use_take_profit', e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="use-take-profit" className="text-sm font-medium">Take Profit</Label>
+              </div>
+              {strategy.use_take_profit && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Porcentaje de ganancia (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="100"
+                    value={strategy.take_profit_pct}
+                    onChange={(e) => onStrategyChange('take_profit_pct', parseFloat(e.target.value) || 3.0)}
+                    placeholder="3.0"
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Stop Loss */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="use-stop-loss"
+                  checked={strategy.use_stop_loss}
+                  onChange={(e) => onStrategyChange('use_stop_loss', e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="use-stop-loss" className="text-sm font-medium">Stop Loss</Label>
+              </div>
+              {strategy.use_stop_loss && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Porcentaje de pérdida (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="50"
+                    value={strategy.stop_loss_pct}
+                    onChange={(e) => onStrategyChange('stop_loss_pct', parseFloat(e.target.value) || 1.0)}
+                    placeholder="1.0"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Descripción */}
+          <div className="text-xs text-orange-600 mt-2">
+            <p><strong>Take Profit:</strong> Cierra la operación cuando el precio sube el porcentaje especificado desde la entrada.</p>
+            <p><strong>Stop Loss:</strong> Cierra la operación cuando el precio baja el porcentaje especificado desde la entrada.</p>
+            <p>Estos criterios se aplican además de las señales de cruce configuradas.</p>
+          </div>
+        </div>
+
         {/* Resumen de la Estrategia */}
         {selectedDataset1 && selectedDataset2 && selectedPriceDataset && (
           <div className="p-4 border rounded-lg bg-green-50">
@@ -289,6 +365,12 @@ export function MultiDatasetSelector({
               <div>• <strong>Entrada:</strong> {strategy.entry_direction === 'up' ? 'Al alza' : 'A la baja'} cuando {selectedDataset1.name} ({strategy.dataset1_ma_type.toUpperCase()}({strategy.dataset1_ma_period})) cruza {selectedDataset2.name} ({strategy.dataset2_ma_type.toUpperCase()}({strategy.dataset2_ma_period}))</div>
               <div>• <strong>Salida:</strong> {strategy.exit_direction === 'up' ? 'Al alza' : 'A la baja'} cuando {selectedDataset1.name} ({strategy.dataset1_ma_type.toUpperCase()}({strategy.dataset1_ma_period})) cruza {selectedDataset2.name} ({strategy.dataset2_ma_type.toUpperCase()}({strategy.dataset2_ma_period}))</div>
               <div>• <strong>Precios:</strong> Usando datos de {selectedPriceDataset.name}</div>
+              {strategy.use_take_profit && (
+                <div>• <strong>Take Profit:</strong> {strategy.take_profit_pct}% de ganancia desde la entrada</div>
+              )}
+              {strategy.use_stop_loss && (
+                <div>• <strong>Stop Loss:</strong> {strategy.stop_loss_pct}% de pérdida desde la entrada</div>
+              )}
             </div>
           </div>
         )}

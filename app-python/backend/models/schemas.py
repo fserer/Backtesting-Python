@@ -35,6 +35,12 @@ class MultiDatasetCrossoverStrategy(BaseModel):
     
     # Dataset para precio de Bitcoin (usd)
     price_dataset_id: int  # De qué dataset tomar el precio USD
+    
+    # Criterios de Take Profit y Stop Loss
+    take_profit_pct: float = Field(3.0, ge=0.1, le=100.0)  # Porcentaje de ganancia para cerrar
+    stop_loss_pct: float = Field(1.0, ge=0.1, le=50.0)     # Porcentaje de pérdida para cerrar
+    use_take_profit: bool = True   # Si usar Take Profit
+    use_stop_loss: bool = True     # Si usar Stop Loss
 
 class TransformRequest(BaseModel):
     v: TransformConfig = Field(default_factory=lambda: TransformConfig(type="none", period=1))
