@@ -96,6 +96,10 @@ class EquityPoint(BaseModel):
     timestamp: str
     equity: float
 
+class QuantStatsRequest(BaseModel):
+    trades: List[Dict]
+    initial_cash: float = Field(10000.0, gt=0.0)
+
 class Trade(BaseModel):
     entry_date: Optional[str]
     exit_date: Optional[str]

@@ -17,7 +17,7 @@ from services.backtest import run_backtest, run_multi_dataset_backtest
 from services.quantstats_service import QuantStatsService
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
-    CreateDatasetRequest, UpdateDatasetRequest
+    CreateDatasetRequest, UpdateDatasetRequest, QuantStatsRequest
 )
 
 # Configurar logging
@@ -242,7 +242,7 @@ async def delete_dataset_endpoint(dataset_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/quantstats")
-async def generate_quantstats_analysis(trades: List[Dict], initial_cash: float = 10000.0):
+async def generate_quantstats_analysis(request: QuantStatsRequest):
     """
     Genera análisis completo de QuantStats basado en los trades del backtesting.
     
@@ -254,14 +254,14 @@ async def generate_quantstats_analysis(trades: List[Dict], initial_cash: float =
         Análisis completo de QuantStats con métricas, drawdowns y datos para visualizaciones
     """
     try:
-        if not trades:
+        if not request.trades:
             raise HTTPException(status_code=400, detail="No hay trades para analizar")
         
         # Inicializar servicio de QuantStats
         quantstats_service = QuantStatsService()
         
         # Generar serie de retornos desde los trades
-        returns_series = quantstats_service.generate_returns_series(trades, initial_cash)
+        returns_series = quantstats_service.generate_returns_series(request.trades, request.initial_cash)
         
         if returns_series.empty:
             raise HTTPException(status_code=400, detail="No se pudo generar serie de retornos válida")
@@ -269,7 +269,7 @@ async def generate_quantstats_analysis(trades: List[Dict], initial_cash: float =
         # Generar análisis completo
         analysis = quantstats_service.generate_full_report(returns_series)
         
-        logger.info(f"Análisis de QuantStats generado para {len(trades)} trades")
+        logger.info(f"Análisis de QuantStats generado para {len(request.trades)} trades")
         return analysis
         
     except Exception as e:

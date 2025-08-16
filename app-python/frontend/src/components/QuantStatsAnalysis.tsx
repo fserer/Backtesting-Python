@@ -90,10 +90,19 @@ const QuantStatsAnalysis: React.FC<QuantStatsAnalysisProps> = ({ trades, initial
     setError(null);
 
     try {
+      console.log('Enviando trades a QuantStats:', trades.length, 'trades');
       const data = await apiClient.generateQuantStatsAnalysis(trades, initialCash);
+      console.log('Respuesta de QuantStats:', data);
       setQuantStatsData(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error('Error en QuantStats:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'string') {
+        setError(err);
+      } else {
+        setError('Error desconocido al generar análisis QuantStats');
+      }
     } finally {
       setLoading(false);
     }
