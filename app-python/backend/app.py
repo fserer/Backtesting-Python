@@ -13,7 +13,7 @@ from services.sqlite_client import (
 )
 from services.csv_ingest import process_csv_upload
 from services.transform import apply_transformations
-from services.backtest import run_backtest
+from services.backtest import run_backtest, run_multi_dataset_backtest
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
     CreateDatasetRequest, UpdateDatasetRequest
@@ -108,20 +108,49 @@ async def run_backtest_endpoint(request: BacktestRequest):
         # Aplicar transformaciones
         df_transformed = apply_transformations(df, request.transform)
         
-        # Ejecutar backtest
-        results = run_backtest(
-            df=df_transformed,
-            threshold_entry=request.threshold_entry,
-            threshold_exit=request.threshold_exit,
-            fees=request.fees,
-            slippage=request.slippage,
-            init_cash=request.init_cash,
-            apply_to=request.apply_to,
-            override_freq=request.override_freq,
-            strategy_type=request.strategy_type,
-            crossover_strategy=request.crossover_strategy.dict() if request.crossover_strategy else None,
-            period=request.period
-        )
+        # Ejecutar backtest según el tipo de estrategia
+        if request.strategy_type == "multi_dataset_crossover" and request.multi_dataset_crossover_strategy:
+            # Estrategia multi-dataset
+            strategy = request.multi_dataset_crossover_strategy
+            
+            # Cargar datasets adicionales
+            df1 = load_ticks_by_dataset(strategy.dataset1_id)
+            df2 = load_ticks_by_dataset(strategy.dataset2_id)
+            price_df = load_ticks_by_dataset(strategy.price_dataset_id)
+            
+            if df1.empty or df2.empty or price_df.empty:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Uno o más datasets no tienen datos disponibles."
+                )
+            
+            # Ejecutar backtest multi-dataset
+            results = run_multi_dataset_backtest(
+                df1=df1,
+                df2=df2,
+                price_df=price_df,
+                strategy=strategy.dict(),
+                fees=request.fees,
+                slippage=request.slippage,
+                init_cash=request.init_cash,
+                period=request.period
+            )
+        else:
+            # Estrategias tradicionales (threshold o crossover)
+            results = run_backtest(
+                df=df_transformed,
+                threshold_entry=request.threshold_entry,
+                threshold_exit=request.threshold_exit,
+                fees=request.fees,
+                slippage=request.slippage,
+                init_cash=request.init_cash,
+                apply_to=request.apply_to,
+                override_freq=request.override_freq,
+                strategy_type=request.strategy_type,
+                crossover_strategy=request.crossover_strategy.dict() if request.crossover_strategy else None,
+                multi_dataset_crossover_strategy=request.multi_dataset_crossover_strategy.dict() if request.multi_dataset_crossover_strategy else None,
+                period=request.period
+            )
         
         return BacktestResponse(**results)
         

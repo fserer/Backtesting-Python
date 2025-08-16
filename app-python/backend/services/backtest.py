@@ -18,6 +18,7 @@ def run_backtest(
     override_freq: Optional[str] = None,
     strategy_type: str = "threshold",
     crossover_strategy: dict = None,
+    multi_dataset_crossover_strategy: dict = None,
     period: str = "all"
 ) -> Dict[str, Any]:
     """
@@ -49,7 +50,7 @@ def run_backtest(
         freq = determine_frequency(df_filtered, override_freq)
         
         # Generar señales
-        signals = generate_signals(df_filtered, threshold_entry, threshold_exit, apply_to, strategy_type, crossover_strategy)
+        signals = generate_signals(df_filtered, threshold_entry, threshold_exit, apply_to, strategy_type, crossover_strategy, multi_dataset_crossover_strategy)
         
         # Preparar datos para vectorbt
         close_prices = df_filtered['usd_transformed'].values
@@ -169,7 +170,8 @@ def generate_signals(
     threshold_exit: float, 
     apply_to: str,
     strategy_type: str = "threshold",
-    crossover_strategy: dict = None
+    crossover_strategy: dict = None,
+    multi_dataset_crossover_strategy: dict = None
 ) -> pd.DataFrame:
     """
     Genera señales de entrada y salida basadas en diferentes estrategias.
@@ -179,8 +181,9 @@ def generate_signals(
         threshold_entry: Umbral de entrada (solo para strategy_type="threshold")
         threshold_exit: Umbral de salida (solo para strategy_type="threshold")
         apply_to: Columna a usar para señales ('v' o 'usd')
-        strategy_type: 'threshold' o 'crossover'
+        strategy_type: 'threshold', 'crossover', o 'multi_dataset_crossover'
         crossover_strategy: Configuración para estrategia de cruce
+        multi_dataset_crossover_strategy: Configuración para cruce entre datasets
         
     Returns:
         DataFrame con columnas 'entries' y 'exits'
@@ -190,6 +193,8 @@ def generate_signals(
             return generate_threshold_signals(df, threshold_entry, threshold_exit, apply_to)
         elif strategy_type == "crossover" and crossover_strategy:
             return generate_crossover_signals(df, apply_to, crossover_strategy)
+        elif strategy_type == "multi_dataset_crossover" and multi_dataset_crossover_strategy:
+            return generate_multi_dataset_crossover_signals(df, multi_dataset_crossover_strategy)
         else:
             raise ValueError(f"Estrategia no válida: {strategy_type}")
         
@@ -442,3 +447,191 @@ def validate_backtest_params(
     # Los thresholds pueden ser cualquier valor numérico
     if not isinstance(threshold_entry, (int, float)) or not isinstance(threshold_exit, (int, float)):
         raise ValueError("Los thresholds deben ser valores numéricos")
+
+def generate_multi_dataset_crossover_signals(df: pd.DataFrame, strategy: dict) -> pd.DataFrame:
+    """
+    Genera señales basadas en cruces entre indicadores de diferentes datasets.
+    
+    Args:
+        df: DataFrame con datos del dataset principal (para timestamps y precio)
+        strategy: Configuración de la estrategia multi-dataset
+        
+    Returns:
+        DataFrame con columnas 'entries' y 'exits'
+    """
+    try:
+        # Esta función será llamada desde el endpoint que maneja múltiples datasets
+        # Por ahora, retornamos señales vacías ya que necesitamos acceso a múltiples datasets
+        logger.info("Función multi-dataset crossover llamada - requiere implementación en endpoint")
+        
+        # Crear señales vacías del mismo tamaño que el DataFrame
+        signals = pd.DataFrame({
+            'entries': [False] * len(df),
+            'exits': [False] * len(df)
+        })
+        
+        return signals
+        
+    except Exception as e:
+        logger.error(f"Error en multi-dataset crossover: {str(e)}")
+        raise e
+
+def run_multi_dataset_backtest(
+    df1: pd.DataFrame,
+    df2: pd.DataFrame,
+    price_df: pd.DataFrame,
+    strategy: dict,
+    fees: float,
+    slippage: float,
+    init_cash: float,
+    period: str = "all"
+) -> Dict[str, Any]:
+    """
+    Ejecuta un backtest usando cruces entre indicadores de diferentes datasets.
+    
+    Args:
+        df1: DataFrame del primer dataset
+        df2: DataFrame del segundo dataset  
+        price_df: DataFrame para precios (puede ser df1, df2, o un tercer dataset)
+        strategy: Configuración de la estrategia multi-dataset
+        fees: Comisiones
+        slippage: Slippage
+        init_cash: Capital inicial
+        period: Período a filtrar
+        
+    Returns:
+        Dict con resultados del backtest
+    """
+    try:
+        # Filtrar datos por período
+        df1_filtered = filter_data_by_period(df1, period)
+        df2_filtered = filter_data_by_period(df2, period)
+        price_df_filtered = filter_data_by_period(price_df, period)
+        
+        if df1_filtered.empty or df2_filtered.empty or price_df_filtered.empty:
+            raise ValueError(f"No hay datos disponibles para el período '{period}'")
+        
+        logger.info(f"Período seleccionado: {period} - Datasets: {len(df1_filtered)}, {len(df2_filtered)}, {len(price_df_filtered)} registros")
+        
+        # Determinar frecuencia
+        freq = determine_frequency(price_df_filtered)
+        
+        # Generar señales de cruce entre datasets
+        signals = generate_multi_dataset_crossover_signals_impl(
+            df1_filtered, df2_filtered, strategy
+        )
+        
+        # Preparar datos para vectorbt
+        close_prices = price_df_filtered['usd'].values
+        entries = signals['entries'].values
+        exits = signals['exits'].values
+        
+        # Configurar parámetros de vectorbt
+        vbt_settings = {
+            'close': close_prices,
+            'entries': entries,
+            'exits': exits,
+            'fees': fees,
+            'slippage': slippage,
+            'init_cash': init_cash,
+            'freq': freq,
+            'accumulate': False,
+            'upon_long_conflict': 'ignore',
+            'upon_short_conflict': 'ignore'
+        }
+        
+        # Ejecutar backtest
+        portfolio = vbt.Portfolio.from_signals(**vbt_settings)
+        
+        # Calcular métricas
+        results = calculate_metrics(portfolio, price_df_filtered)
+        
+        logger.info(f"Multi-dataset backtest completado: {results['results']['trades']} trades, {results['results']['total_return']:.2%} retorno")
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error en multi-dataset backtest: {str(e)}")
+        raise e
+
+def generate_multi_dataset_crossover_signals_impl(
+    df1: pd.DataFrame, 
+    df2: pd.DataFrame, 
+    strategy: dict
+) -> pd.DataFrame:
+    """
+    Implementación real de señales de cruce entre datasets.
+    
+    Args:
+        df1: DataFrame del primer dataset
+        df2: DataFrame del segundo dataset
+        strategy: Configuración de la estrategia
+        
+    Returns:
+        DataFrame con columnas 'entries' y 'exits'
+    """
+    try:
+        # Extraer configuración
+        dataset1_indicator = strategy['dataset1_indicator']  # 'v' o 'usd'
+        dataset1_ma_type = strategy['dataset1_ma_type']      # 'sma' o 'ema'
+        dataset1_ma_period = strategy['dataset1_ma_period']
+        
+        dataset2_indicator = strategy['dataset2_indicator']  # 'v' o 'usd'
+        dataset2_ma_type = strategy['dataset2_ma_type']      # 'sma' o 'ema'
+        dataset2_ma_period = strategy['dataset2_ma_period']
+        
+        entry_direction = strategy['entry_direction']        # 'up' o 'down'
+        exit_direction = strategy['exit_direction']          # 'up' o 'down'
+        
+        # Calcular medias móviles para dataset 1
+        series1 = df1[dataset1_indicator]
+        if dataset1_ma_type == 'sma':
+            ma1 = series1.rolling(window=dataset1_ma_period).mean()
+        else:  # ema
+            ma1 = series1.ewm(span=dataset1_ma_period).mean()
+        
+        # Calcular medias móviles para dataset 2
+        series2 = df2[dataset2_indicator]
+        if dataset2_ma_type == 'sma':
+            ma2 = series2.rolling(window=dataset2_ma_period).mean()
+        else:  # ema
+            ma2 = series2.ewm(span=dataset2_ma_period).mean()
+        
+        # Alinear los datos por timestamp
+        # Asumimos que ambos datasets tienen timestamps similares
+        min_len = min(len(ma1), len(ma2))
+        ma1_aligned = ma1.iloc[:min_len]
+        ma2_aligned = ma2.iloc[:min_len]
+        
+        # Generar señales de entrada según la dirección configurada
+        if entry_direction == 'up':
+            # Cruce al alza: ma1 cruza por encima de ma2
+            entries = (ma1_aligned > ma2_aligned) & (ma1_aligned.shift(1) <= ma2_aligned.shift(1))
+        else:
+            # Cruce a la baja: ma1 cruza por debajo de ma2
+            entries = (ma1_aligned < ma2_aligned) & (ma1_aligned.shift(1) >= ma2_aligned.shift(1))
+        
+        # Generar señales de salida según la dirección configurada
+        if exit_direction == 'up':
+            # Cruce al alza: ma1 cruza por encima de ma2
+            exits = (ma1_aligned > ma2_aligned) & (ma1_aligned.shift(1) <= ma2_aligned.shift(1))
+        else:
+            # Cruce a la baja: ma1 cruza por debajo de ma2
+            exits = (ma1_aligned < ma2_aligned) & (ma1_aligned.shift(1) >= ma2_aligned.shift(1))
+        
+        # Crear DataFrame de señales
+        signals = pd.DataFrame({
+            'entries': entries,
+            'exits': exits
+        })
+        
+        # Rellenar NaN con False
+        signals = signals.fillna(False)
+        
+        logger.info(f"Señales multi-dataset generadas: {signals['entries'].sum()} entradas, {signals['exits'].sum()} salidas")
+        
+        return signals
+        
+    except Exception as e:
+        logger.error(f"Error generando señales multi-dataset: {str(e)}")
+        raise e

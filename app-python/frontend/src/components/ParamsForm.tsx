@@ -5,7 +5,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
-import { TransformConfig, Dataset, CrossoverStrategy } from '@/lib/api';
+import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy } from '@/lib/api';
+import { MultiDatasetSelector } from './MultiDatasetSelector';
 
 interface ParamsFormProps {
   onSubmit: (params: any) => void;
@@ -21,7 +22,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       usd: { type: 'none' as const, period: 1 }
     },
     apply_to: 'v' as 'v' | 'usd',
-    strategy_type: 'threshold' as 'threshold' | 'crossover',
+    strategy_type: 'threshold' as 'threshold' | 'crossover' | 'multi_dataset_crossover',
     threshold_entry: 0,
     threshold_exit: 0,
     crossover_strategy: {
@@ -34,11 +35,46 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       entry_direction: 'up' as 'up' | 'down',
       exit_direction: 'down' as 'up' | 'down'
     },
+    multi_dataset_crossover_strategy: {
+      dataset1_id: 0,
+      dataset1_indicator: 'v' as 'v' | 'usd',
+      dataset1_ma_type: 'sma' as 'sma' | 'ema',
+      dataset1_ma_period: 7,
+      dataset2_id: 0,
+      dataset2_indicator: 'v' as 'v' | 'usd',
+      dataset2_ma_type: 'sma' as 'sma' | 'ema',
+      dataset2_ma_period: 30,
+      entry_direction: 'up' as 'up' | 'down',
+      exit_direction: 'down' as 'up' | 'down',
+      price_dataset_id: 0
+    },
     period: 'all' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | 'all',
     fees: 0.0005,
     slippage: 0.0002,
     init_cash: 10000
   });
+
+  // Estado para datasets múltiples
+  const [selectedDataset1, setSelectedDataset1] = React.useState<Dataset | null>(null);
+  const [selectedDataset2, setSelectedDataset2] = React.useState<Dataset | null>(null);
+  const [selectedPriceDataset, setSelectedPriceDataset] = React.useState<Dataset | null>(null);
+  const [datasets, setDatasets] = React.useState<Dataset[]>([]);
+
+  // Cargar datasets al montar el componente
+  React.useEffect(() => {
+    const loadDatasets = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/datasets');
+        if (response.ok) {
+          const data = await response.json();
+          setDatasets(data);
+        }
+      } catch (error) {
+        console.error('Error cargando datasets:', error);
+      }
+    };
+    loadDatasets();
+  }, []);
 
   // Actualizar dataset_id cuando cambie el dataset seleccionado
   React.useEffect(() => {
@@ -46,6 +82,43 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       setFormData(prev => ({ ...prev, dataset_id: selectedDataset.id }));
     }
   }, [selectedDataset]);
+
+  // Actualizar estrategia multi-dataset cuando cambien los datasets seleccionados
+  React.useEffect(() => {
+    if (selectedDataset1) {
+      setFormData(prev => ({
+        ...prev,
+        multi_dataset_crossover_strategy: {
+          ...prev.multi_dataset_crossover_strategy,
+          dataset1_id: selectedDataset1.id
+        }
+      }));
+    }
+  }, [selectedDataset1]);
+
+  React.useEffect(() => {
+    if (selectedDataset2) {
+      setFormData(prev => ({
+        ...prev,
+        multi_dataset_crossover_strategy: {
+          ...prev.multi_dataset_crossover_strategy,
+          dataset2_id: selectedDataset2.id
+        }
+      }));
+    }
+  }, [selectedDataset2]);
+
+  React.useEffect(() => {
+    if (selectedPriceDataset) {
+      setFormData(prev => ({
+        ...prev,
+        multi_dataset_crossover_strategy: {
+          ...prev.multi_dataset_crossover_strategy,
+          price_dataset_id: selectedPriceDataset.id
+        }
+      }));
+    }
+  }, [selectedPriceDataset]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +134,16 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
           ...prev.transform[field],
           [key]: value
         }
+      }
+    }));
+  };
+
+  const updateMultiDatasetStrategy = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      multi_dataset_crossover_strategy: {
+        ...prev.multi_dataset_crossover_strategy,
+        [field]: value
       }
     }));
   };
@@ -187,7 +270,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
             <Label htmlFor="strategy-type">Tipo de Estrategia</Label>
             <Select
               value={formData.strategy_type}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, strategy_type: value as 'threshold' | 'crossover' }))}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, strategy_type: value as 'threshold' | 'crossover' | 'multi_dataset_crossover' }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -195,6 +278,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
               <SelectContent>
                 <SelectItem value="threshold">Umbrales</SelectItem>
                 <SelectItem value="crossover">Cruces de Medias Móviles</SelectItem>
+                <SelectItem value="multi_dataset_crossover">Cruce entre Datasets</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -463,6 +547,30 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
             </div>
           )}
 
+          {/* Cruce entre Datasets - Solo para estrategia multi_dataset_crossover */}
+          {formData.strategy_type === 'multi_dataset_crossover' && (
+            <MultiDatasetSelector
+              datasets={datasets}
+              selectedDataset1={selectedDataset1}
+              selectedDataset2={selectedDataset2}
+              selectedPriceDataset={selectedPriceDataset}
+              onDataset1Select={setSelectedDataset1}
+              onDataset2Select={setSelectedDataset2}
+              onPriceDatasetSelect={setSelectedPriceDataset}
+              strategy={{
+                dataset1_indicator: formData.multi_dataset_crossover_strategy.dataset1_indicator,
+                dataset1_ma_type: formData.multi_dataset_crossover_strategy.dataset1_ma_type,
+                dataset1_ma_period: formData.multi_dataset_crossover_strategy.dataset1_ma_period,
+                dataset2_indicator: formData.multi_dataset_crossover_strategy.dataset2_indicator,
+                dataset2_ma_type: formData.multi_dataset_crossover_strategy.dataset2_ma_type,
+                dataset2_ma_period: formData.multi_dataset_crossover_strategy.dataset2_ma_period,
+                entry_direction: formData.multi_dataset_crossover_strategy.entry_direction,
+                exit_direction: formData.multi_dataset_crossover_strategy.exit_direction
+              }}
+              onStrategyChange={updateMultiDatasetStrategy}
+            />
+          )}
+
           {/* Comisiones y Slippage */}
           <div className="space-y-3">
             <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
@@ -516,7 +624,12 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={isRunning || !selectedDataset}
+            disabled={
+              isRunning || 
+              !selectedDataset || 
+              (formData.strategy_type === 'multi_dataset_crossover' && 
+               (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset))
+            }
           >
             {isRunning ? (
               <>
@@ -526,7 +639,9 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
             ) : (
               <>
                 <Play className="h-4 w-4 mr-2" />
-                {selectedDataset ? 'Ejecutar Backtest' : 'Selecciona un Dataset'}
+                {!selectedDataset ? 'Selecciona un Dataset' : 
+                 formData.strategy_type === 'multi_dataset_crossover' && (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset) ? 
+                 'Selecciona todos los Datasets' : 'Ejecutar Backtest'}
               </>
             )}
           </Button>
