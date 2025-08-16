@@ -91,7 +91,7 @@ def filter_data_by_period(df: pd.DataFrame, period: str) -> pd.DataFrame:
     
     Args:
         df: DataFrame con columna 't' (timestamp)
-        period: Período a filtrar ('1w', '1m', '3m', '6m', '1y', 'ytd', '2y', '4y', '6y', '8y', '10y', 'all')
+        period: Período a filtrar ('1w', '1m', '3m', '6m', '1y', 'ytd', '2y', '3y', '4y', '5y', '6y', '7y', '8y', '9y', '10y', 'all')
     
     Returns:
         DataFrame filtrado
@@ -118,12 +118,20 @@ def filter_data_by_period(df: pd.DataFrame, period: str) -> pd.DataFrame:
         start_date = pd.Timestamp(latest_date.year, 1, 1, tz=latest_date.tz)
     elif period == "2y":
         start_date = latest_date - pd.Timedelta(days=2*365)
+    elif period == "3y":
+        start_date = latest_date - pd.Timedelta(days=3*365)
     elif period == "4y":
         start_date = latest_date - pd.Timedelta(days=4*365)
+    elif period == "5y":
+        start_date = latest_date - pd.Timedelta(days=5*365)
     elif period == "6y":
         start_date = latest_date - pd.Timedelta(days=6*365)
+    elif period == "7y":
+        start_date = latest_date - pd.Timedelta(days=7*365)
     elif period == "8y":
         start_date = latest_date - pd.Timedelta(days=8*365)
+    elif period == "9y":
+        start_date = latest_date - pd.Timedelta(days=9*365)
     elif period == "10y":
         start_date = latest_date - pd.Timedelta(days=10*365)
     else:

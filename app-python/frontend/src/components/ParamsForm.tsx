@@ -308,9 +308,13 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
                 <SelectItem value="1y">Último Año</SelectItem>
                 <SelectItem value="ytd">Este Año (YTD)</SelectItem>
                 <SelectItem value="2y">Últimos 2 Años</SelectItem>
+                <SelectItem value="3y">Últimos 3 Años</SelectItem>
                 <SelectItem value="4y">Últimos 4 Años</SelectItem>
+                <SelectItem value="5y">Últimos 5 Años</SelectItem>
                 <SelectItem value="6y">Últimos 6 Años</SelectItem>
+                <SelectItem value="7y">Últimos 7 Años</SelectItem>
                 <SelectItem value="8y">Últimos 8 Años</SelectItem>
+                <SelectItem value="9y">Últimos 9 Años</SelectItem>
                 <SelectItem value="10y">Últimos 10 Años</SelectItem>
                 <SelectItem value="all">Todo el Tiempo</SelectItem>
               </SelectContent>
