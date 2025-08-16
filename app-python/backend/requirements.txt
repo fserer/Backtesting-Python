@@ -8,3 +8,4 @@ pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
 # supabase==2.0.2  # Removido - usando SQLite local
 python-multipart>=0.0.6
+quantstats>=0.0.73
