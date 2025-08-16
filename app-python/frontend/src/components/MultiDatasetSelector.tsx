@@ -243,12 +243,12 @@ export function MultiDatasetSelector({
 
         {/* Direcciones de Cruce */}
         <div className="space-y-3 p-4 border rounded-lg bg-blue-50">
-          <Label className="text-sm font-medium text-blue-700">Direcciones de Cruce</Label>
+          <Label className="text-sm font-medium text-blue-700">Señales de Cruce</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
-                Entrada
+                Señal de Entrada
               </Label>
               <Select
                 value={strategy.entry_direction}
@@ -258,16 +258,22 @@ export function MultiDatasetSelector({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="up">Al Alza (Dataset 1 cruza por encima)</SelectItem>
-                  <SelectItem value="down">A la Baja (Dataset 1 cruza por debajo)</SelectItem>
+                  <SelectItem value="up">Al Alza (Dataset 1 cruza de abajo hacia arriba)</SelectItem>
+                  <SelectItem value="down">A la Baja (Dataset 1 cruza de arriba hacia abajo)</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="text-xs text-blue-600 mt-1">
+                {strategy.entry_direction === 'up' ? 
+                  "📈 Comprar cuando Dataset 1 cruza de abajo hacia arriba al Dataset 2" :
+                  "📉 Comprar cuando Dataset 1 cruza de arriba hacia abajo al Dataset 2"
+                }
+              </div>
             </div>
             
             <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1">
                 <TrendingDown className="h-3 w-3" />
-                Salida
+                Señal de Salida
               </Label>
               <Select
                 value={strategy.exit_direction}
@@ -277,10 +283,16 @@ export function MultiDatasetSelector({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="up">Al Alza (Dataset 1 cruza por encima)</SelectItem>
-                  <SelectItem value="down">A la Baja (Dataset 1 cruza por debajo)</SelectItem>
+                  <SelectItem value="up">Al Alza (Dataset 1 cruza de abajo hacia arriba)</SelectItem>
+                  <SelectItem value="down">A la Baja (Dataset 1 cruza de arriba hacia abajo)</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="text-xs text-blue-600 mt-1">
+                {strategy.exit_direction === 'up' ? 
+                  "📈 Vender cuando Dataset 1 cruza de abajo hacia arriba al Dataset 2" :
+                  "📉 Vender cuando Dataset 1 cruza de arriba hacia abajo al Dataset 2"
+                }
+              </div>
             </div>
           </div>
         </div>
@@ -362,8 +374,8 @@ export function MultiDatasetSelector({
           <div className="p-4 border rounded-lg bg-green-50">
             <Label className="text-sm font-medium text-green-700">Resumen de Estrategia</Label>
             <div className="text-xs text-green-600 mt-2 space-y-1">
-              <div>• <strong>Entrada:</strong> {strategy.entry_direction === 'up' ? 'Al alza' : 'A la baja'} cuando {selectedDataset1.name} ({strategy.dataset1_ma_type.toUpperCase()}({strategy.dataset1_ma_period})) cruza {selectedDataset2.name} ({strategy.dataset2_ma_type.toUpperCase()}({strategy.dataset2_ma_period}))</div>
-              <div>• <strong>Salida:</strong> {strategy.exit_direction === 'up' ? 'Al alza' : 'A la baja'} cuando {selectedDataset1.name} ({strategy.dataset1_ma_type.toUpperCase()}({strategy.dataset1_ma_period})) cruza {selectedDataset2.name} ({strategy.dataset2_ma_type.toUpperCase()}({strategy.dataset2_ma_period}))</div>
+              <div>• <strong>Entrada:</strong> {strategy.entry_direction === 'up' ? '📈 Al alza (de abajo hacia arriba)' : '📉 A la baja (de arriba hacia abajo)'} cuando {selectedDataset1.name} ({strategy.dataset1_ma_type.toUpperCase()}({strategy.dataset1_ma_period})) cruza {selectedDataset2.name} ({strategy.dataset2_ma_type.toUpperCase()}({strategy.dataset2_ma_period}))</div>
+              <div>• <strong>Salida:</strong> {strategy.exit_direction === 'up' ? '📈 Al alza (de abajo hacia arriba)' : '📉 A la baja (de arriba hacia abajo)'} cuando {selectedDataset1.name} ({strategy.dataset1_ma_type.toUpperCase()}({strategy.dataset1_ma_period})) cruza {selectedDataset2.name} ({strategy.dataset2_ma_type.toUpperCase()}({strategy.dataset2_ma_period}))</div>
               <div>• <strong>Precios:</strong> Usando datos de {selectedPriceDataset.name}</div>
               {strategy.use_take_profit && (
                 <div>• <strong>Take Profit:</strong> {strategy.take_profit_pct}% de ganancia desde la entrada</div>
