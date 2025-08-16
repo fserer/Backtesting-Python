@@ -30,8 +30,8 @@ export function EquityChart({ equity }: EquityChartProps) {
   // Formatear datos para el gráfico
   const chartData = equity.map(point => ({
     ...point,
-    timestamp: new Date(point.timestamp).toLocaleDateString('es-ES'),
-    equity: Number(point.equity.toFixed(2))
+    timestamp: new Date(point.timestamp || '').toLocaleDateString('es-ES'),
+    equity: Number((point.equity || 0).toFixed(2))
   }));
 
   const formatCurrency = (value: number) => {

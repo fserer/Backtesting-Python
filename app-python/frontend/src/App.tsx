@@ -103,7 +103,7 @@ function AppContent() {
 
         {/* Tabla de Operaciones - Ancho completo */}
         <div className="mt-8">
-          <TradesTable trades={backtestResult?.trades} />
+          <TradesTable trades={backtestResult?.trades || []} />
         </div>
 
         {/* Información adicional */}

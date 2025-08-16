@@ -106,10 +106,10 @@ export function TradesTable({ trades }: TradesTableProps) {
                     {formatCurrency(trade.exit_price)}
                   </td>
                   <td className="py-3 px-2 text-gray-600">
-                    {trade.size.toFixed(2)}
+                    {(trade.size || 0).toFixed(2)}
                   </td>
                   <td className="py-3 px-2 text-gray-600">
-                    {formatDuration(trade.duration)}
+                    {formatDuration(trade.duration || 0)}
                   </td>
                   <td className={`py-3 px-2 font-medium ${getPnlColor(trade.pnl)}`}>
                     {formatCurrency(trade.pnl)}

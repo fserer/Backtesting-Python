@@ -71,7 +71,7 @@ export function KpiCards({ results, initialCapital }: KpiCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {formatNumber(results.sharpe)}
+            {formatNumber(results.sharpe || 0)}
           </div>
         </CardContent>
       </Card>
@@ -96,7 +96,7 @@ export function KpiCards({ results, initialCapital }: KpiCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {results.trades}
+            {results.trades || 0}
           </div>
         </CardContent>
       </Card>
