@@ -521,10 +521,15 @@ def run_multi_dataset_backtest(
             df1_filtered, df2_filtered, strategy
         )
         
-        # Preparar datos para vectorbt
-        close_prices = price_df_filtered['usd'].values
-        entries = signals['entries'].values
-        exits = signals['exits'].values
+        # Alinear todos los arrays al mismo tamaño (usar el más pequeño)
+        min_length = min(len(price_df_filtered), len(signals))
+        
+        # Preparar datos para vectorbt (alineados)
+        close_prices = price_df_filtered['usd'].values[:min_length]
+        entries = signals['entries'].values[:min_length]
+        exits = signals['exits'].values[:min_length]
+        
+        logger.info(f"Datos alineados: {min_length} registros para vectorbt")
         
         # Configurar parámetros de vectorbt
         vbt_settings = {
@@ -543,8 +548,9 @@ def run_multi_dataset_backtest(
         # Ejecutar backtest
         portfolio = vbt.Portfolio.from_signals(**vbt_settings)
         
-        # Calcular métricas
-        results = calculate_metrics(portfolio, price_df_filtered)
+        # Calcular métricas usando el DataFrame alineado
+        price_df_aligned = price_df_filtered.iloc[:min_length]
+        results = calculate_metrics(portfolio, price_df_aligned)
         
         logger.info(f"Multi-dataset backtest completado: {results['results']['trades']} trades, {results['results']['total_return']:.2%} retorno")
         
@@ -598,10 +604,14 @@ def generate_multi_dataset_crossover_signals_impl(
             ma2 = series2.ewm(span=dataset2_ma_period).mean()
         
         # Alinear los datos por timestamp
-        # Asumimos que ambos datasets tienen timestamps similares
+        # Usar el mínimo de ambos datasets
         min_len = min(len(ma1), len(ma2))
         ma1_aligned = ma1.iloc[:min_len]
         ma2_aligned = ma2.iloc[:min_len]
+        
+        logger.info(f"Medias móviles alineadas: {min_len} períodos")
+        logger.info(f"Dataset 1 MA: {dataset1_ma_type}({dataset1_ma_period}) - {dataset1_indicator}")
+        logger.info(f"Dataset 2 MA: {dataset2_ma_type}({dataset2_ma_period}) - {dataset2_indicator}")
         
         # Generar señales de entrada según la dirección configurada
         if entry_direction == 'up':
