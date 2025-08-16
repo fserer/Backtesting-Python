@@ -52,7 +52,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       use_take_profit: true,
       use_stop_loss: true
     },
-    period: 'all' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | 'all',
+    period: '1y' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | 'all',
     fees: 0.0005,
     slippage: 0.0002,
     init_cash: 10000

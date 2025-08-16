@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { BarChart3, TrendingUp, FileText, Loader2 } from 'lucide-react';
 import { formatCurrency, formatPercentage, formatNumber } from '../lib/utils';
+import { apiClient } from '../lib/api';
 
 interface QuantStatsAnalysisProps {
   trades: any[];
@@ -89,22 +90,7 @@ const QuantStatsAnalysis: React.FC<QuantStatsAnalysisProps> = ({ trades, initial
     setError(null);
 
     try {
-      const response = await fetch('/api/quantstats', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          trades: trades,
-          initial_cash: initialCash
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await apiClient.generateQuantStatsAnalysis(trades, initialCash);
       setQuantStatsData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
