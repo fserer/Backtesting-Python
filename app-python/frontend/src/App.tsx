@@ -6,6 +6,7 @@ import { ParamsForm } from './components/ParamsForm';
 import { KpiCards } from './components/KpiCards';
 import { EquityChart } from './components/EquityChart';
 import { TradesTable } from './components/TradesTable';
+import { FundingCost } from './components/FundingCost';
 import PyfolioAnalysis from './components/PyfolioAnalysis';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
@@ -106,6 +107,16 @@ function AppContent() {
         <div className="mt-8">
           <TradesTable trades={backtestResult?.trades || []} />
         </div>
+
+        {/* Coste de Funding - Ancho completo */}
+        {backtestResult?.trades && backtestResult.trades.length > 0 && (
+          <div className="mt-8">
+            <FundingCost 
+              trades={backtestResult.trades} 
+              fundingRateAnnual={10} 
+            />
+          </div>
+        )}
 
         {/* Análisis Pyfolio - Ancho completo */}
         {backtestResult?.trades && backtestResult.trades.length > 0 && (
