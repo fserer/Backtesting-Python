@@ -17,6 +17,17 @@ def apply_transformations(df: pd.DataFrame, transform_config: Dict[str, Any]) ->
         pd.DataFrame: DataFrame con columnas transformadas
     """
     try:
+        # Debug: Verificar el tipo y contenido de transform_config
+        logger.info(f"apply_transformations recibió:")
+        logger.info(f"  - Tipo: {type(transform_config)}")
+        logger.info(f"  - Contenido: {transform_config}")
+        logger.info(f"  - Keys disponibles: {list(transform_config.keys()) if hasattr(transform_config, 'keys') else 'No es dict'}")
+        
+        # Convertir a diccionario si es un objeto Pydantic
+        if hasattr(transform_config, 'dict'):
+            transform_config = transform_config.dict()
+            logger.info(f"Convertido a dict: {transform_config}")
+        
         df_transformed = df.copy()
         
         # Aplicar transformación a 'v'
