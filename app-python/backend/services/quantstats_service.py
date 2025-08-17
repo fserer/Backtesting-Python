@@ -16,6 +16,52 @@ class QuantStatsService:
         # Extender pandas con funcionalidades de QuantStats
         qs.extend_pandas()
     
+    def _clean_json_value(self, value):
+        """
+        Limpia un valor para que sea JSON serializable.
+        
+        Args:
+            value: Valor a limpiar
+            
+        Returns:
+            Valor limpio o None si no es válido
+        """
+        try:
+            if value is None:
+                return None
+            elif isinstance(value, dict):
+                cleaned_dict = {}
+                for k, v in value.items():
+                    cleaned_v = self._clean_json_value(v)
+                    # Incluir todos los valores, incluso None, para mantener la estructura
+                    cleaned_dict[k] = cleaned_v
+                return cleaned_dict
+            elif isinstance(value, list):
+                cleaned_list = []
+                for v in value:
+                    cleaned_v = self._clean_json_value(v)
+                    # Incluir todos los valores, incluso None, para mantener la estructura
+                    cleaned_list.append(cleaned_v)
+                return cleaned_list
+            elif isinstance(value, (str, bool)):
+                return value
+            elif isinstance(value, (np.integer, np.floating)):
+                float_value = float(value)
+                if np.isfinite(float_value) and -1e308 <= float_value <= 1e308:
+                    return float_value
+                else:
+                    return None
+            elif pd.isna(value) or np.isinf(value):
+                return None
+            elif hasattr(value, 'item'):  # Para numpy scalars
+                return self._clean_json_value(value.item())
+            else:
+                # Para otros tipos, intentar convertir a string
+                return str(value)
+        except Exception as e:
+            logger.warning(f"Error limpiando valor JSON: {str(e)}, valor: {value}")
+            return None
+    
     def generate_returns_series(self, trades: List[Dict], initial_cash: float = 10000.0) -> pd.Series:
         """
         Convierte los trades en una serie de retornos diarios para QuantStats.
@@ -35,13 +81,13 @@ class QuantStatsService:
             # Crear DataFrame de trades
             trades_df = pd.DataFrame(trades)
             
+            # Log para debug
+            logger.info(f"Columnas en trades_df: {trades_df.columns.tolist()}")
+            logger.info(f"Primer trade: {trades_df.iloc[0].to_dict()}")
+            
             # Convertir fechas
             trades_df['entry_date'] = pd.to_datetime(trades_df['entry_date'])
             trades_df['exit_date'] = pd.to_datetime(trades_df['exit_date'])
-            
-            # Calcular retornos diarios
-            daily_returns = []
-            current_cash = initial_cash
             
             # Ordenar trades por fecha de entrada
             trades_df = trades_df.sort_values('entry_date')
@@ -51,30 +97,48 @@ class QuantStatsService:
             end_date = trades_df['exit_date'].max()
             date_range = pd.date_range(start=start_date, end=end_date, freq='D')
             
-            # Para cada día, calcular el retorno basado en los trades activos
-            for date in date_range:
-                daily_return = 0.0
-                
-                # Buscar trades que estén activos en esta fecha
-                active_trades = trades_df[
-                    (trades_df['entry_date'] <= date) & 
-                    (trades_df['exit_date'] >= date)
-                ]
-                
-                if not active_trades.empty:
-                    # Calcular retorno ponderado de todos los trades activos
-                    total_pnl = active_trades['pnl'].sum()
-                    total_invested = active_trades['size'].sum() * active_trades['entry_price'].mean()
-                    
-                    if total_invested > 0:
-                        daily_return = total_pnl / total_invested
-                
-                daily_returns.append(daily_return)
+            # Inicializar serie de retornos con ceros
+            returns_series = pd.Series(0.0, index=date_range)
             
-            # Crear serie de retornos
-            returns_series = pd.Series(daily_returns, index=date_range)
+            # Crear retornos diarios basados en el equity curve real
+            # Cada trade se registra en su día de salida con su retorno real
+            for _, trade in trades_df.iterrows():
+                exit_date = trade['exit_date']
+                if exit_date in returns_series.index:
+                    # Usar el retorno real del trade
+                    if 'return_pct' in trade:
+                        trade_return = trade['return_pct']
+                    else:
+                        trade_return = trade['pnl'] / initial_cash
+                    
+                    # Asignar el retorno completo en el día de salida
+                    # IMPORTANTE: Usar .loc para asignar correctamente
+                    returns_series.loc[exit_date] = trade_return
+            
+            # Limpiar valores extremos
+            returns_series = returns_series.replace([np.inf, -np.inf], np.nan)
+            returns_series = returns_series.fillna(0.0)
+            
+            # Verificar que los valores sean razonables (entre -1 y 1)
+            returns_series = returns_series.clip(-1.0, 1.0)
             
             logger.info(f"Serie de retornos generada: {len(returns_series)} días, desde {start_date} hasta {end_date}")
+            logger.info(f"Retornos: min={returns_series.min():.6f}, max={returns_series.max():.6f}, mean={returns_series.mean():.6f}")
+            
+            # Calcular retorno total acumulado para verificar
+            total_return = (1 + returns_series).prod() - 1
+            logger.info(f"Retorno total acumulado: {total_return:.6f} ({total_return*100:.2f}%)")
+            
+            # Verificar con los trades originales
+            if 'return_pct' in trades_df.columns:
+                trades_total_return = trades_df['return_pct'].sum()
+                logger.info(f"Retorno total de trades: {trades_total_return:.6f} ({trades_total_return*100:.2f}%)")
+            
+            # Log adicional para verificar los trades individuales
+            logger.info(f"Trades individuales:")
+            for i, trade in trades_df.iterrows():
+                logger.info(f"  Trade {i+1}: {trade['return_pct']:.4f} ({trade['return_pct']*100:.2f}%)")
+            
             return returns_series
             
         except Exception as e:
@@ -147,26 +211,29 @@ class QuantStatsService:
             for metric_name, metric_func in metrics_to_calculate.items():
                 try:
                     value = metric_func()
-                    if pd.isna(value):
-                        stats[metric_name] = None
-                    elif isinstance(value, (np.integer, np.floating)):
-                        stats[metric_name] = float(value)
-                    else:
-                        stats[metric_name] = value
+                    stats[metric_name] = self._clean_json_value(value)
                 except Exception as e:
                     logger.warning(f"Error calculando métrica {metric_name}: {str(e)}")
                     stats[metric_name] = None
             
             # Añadir métricas que pueden requerir manejo especial
             try:
-                stats['monthly_returns'] = qs.stats.monthly_returns(returns).to_dict()
+                monthly_returns = qs.stats.monthly_returns(returns)
+                if monthly_returns is not None and not monthly_returns.empty:
+                    stats['monthly_returns'] = self._clean_json_value(monthly_returns.to_dict())
+                else:
+                    stats['monthly_returns'] = {}
             except Exception as e:
                 logger.warning(f"Error calculando monthly_returns: {str(e)}")
                 stats['monthly_returns'] = {}
             
             try:
                 if hasattr(qs.stats, 'yearly_returns'):
-                    stats['yearly_returns'] = qs.stats.yearly_returns(returns).to_dict()
+                    yearly_returns = qs.stats.yearly_returns(returns)
+                    if yearly_returns is not None and not yearly_returns.empty:
+                        stats['yearly_returns'] = self._clean_json_value(yearly_returns.to_dict())
+                    else:
+                        stats['yearly_returns'] = {}
                 else:
                     stats['yearly_returns'] = {}
             except Exception as e:
@@ -195,11 +262,71 @@ class QuantStatsService:
                 return {}
             
             try:
-                drawdown_details = qs.stats.drawdown_details(returns)
+                # Verificar que tenemos suficientes datos para calcular drawdowns
+                if returns.empty or len(returns) < 2:
+                    logger.warning("No hay suficientes datos para calcular drawdowns")
+                    return {'drawdown_details': []}
+                
+                # Filtrar valores NaN antes de calcular drawdowns
+                clean_returns = returns.replace([np.inf, -np.inf], np.nan).fillna(0.0)
+                
+                # Verificar que tenemos datos válidos
+                if clean_returns.sum() == 0:
+                    logger.warning("Todos los retornos son cero, no se pueden calcular drawdowns")
+                    return {'drawdown_details': []}
+                
+                # Calcular drawdowns manualmente (QuantStats tiene problemas con nuestros datos)
+                logger.info("Calculando drawdowns manualmente")
+                cumulative_returns = (1 + clean_returns).cumprod()
+                running_max = cumulative_returns.expanding().max()
+                drawdown = (cumulative_returns - running_max) / running_max
+                
+                # Encontrar períodos de drawdown
+                drawdown_periods = []
+                in_drawdown = False
+                start_idx = None
+                
+                for i, dd in enumerate(drawdown):
+                    if dd < 0 and not in_drawdown:
+                        in_drawdown = True
+                        start_idx = i
+                    elif dd >= 0 and in_drawdown:
+                        in_drawdown = False
+                        if start_idx is not None:
+                            period = {
+                                'start': clean_returns.index[start_idx].strftime('%Y-%m-%d'),
+                                'valley': clean_returns.index[drawdown[start_idx:i].idxmin()].strftime('%Y-%m-%d'),
+                                'end': clean_returns.index[i-1].strftime('%Y-%m-%d'),
+                                'days': i - start_idx,
+                                'max drawdown': float(drawdown[start_idx:i].min()),
+                                '99% max drawdown': None
+                            }
+                            drawdown_periods.append(period)
+                
+                # Si aún estamos en drawdown al final, añadir el período final
+                if in_drawdown and start_idx is not None:
+                    period = {
+                        'start': clean_returns.index[start_idx].strftime('%Y-%m-%d'),
+                        'valley': clean_returns.index[drawdown[start_idx:].idxmin()].strftime('%Y-%m-%d'),
+                        'end': clean_returns.index[-1].strftime('%Y-%m-%d'),
+                        'days': len(drawdown) - start_idx,
+                        'max drawdown': float(drawdown[start_idx:].min()),
+                        '99% max drawdown': None
+                    }
+                    drawdown_periods.append(period)
+                
+                drawdown_details = drawdown_periods
                 
                 # Convertir a formato serializable
                 if isinstance(drawdown_details, pd.DataFrame):
                     drawdown_details = drawdown_details.to_dict('records')
+                
+                # Limpiar valores NaN en los drawdowns
+                if isinstance(drawdown_details, list):
+                    for drawdown in drawdown_details:
+                        for key, value in drawdown.items():
+                            if pd.isna(value) or np.isinf(value):
+                                drawdown[key] = None
                 
                 logger.info(f"Detalles de drawdown calculados: {len(drawdown_details) if isinstance(drawdown_details, list) else 1} períodos")
                 return {'drawdown_details': drawdown_details}
@@ -229,42 +356,42 @@ class QuantStatsService:
             
             # Calcular cada tipo de plot con manejo de errores individual
             try:
-                plots_data['rolling_sharpe'] = qs.stats.rolling_sharpe(returns).to_dict()
+                plots_data['rolling_sharpe'] = self._clean_json_value(qs.stats.rolling_sharpe(returns).to_dict())
             except Exception as e:
                 logger.warning(f"Error calculando rolling_sharpe: {str(e)}")
                 plots_data['rolling_sharpe'] = {}
             
             try:
-                plots_data['rolling_sortino'] = qs.stats.rolling_sortino(returns).to_dict()
+                plots_data['rolling_sortino'] = self._clean_json_value(qs.stats.rolling_sortino(returns).to_dict())
             except Exception as e:
                 logger.warning(f"Error calculando rolling_sortino: {str(e)}")
                 plots_data['rolling_sortino'] = {}
             
             try:
-                plots_data['rolling_volatility'] = qs.stats.rolling_volatility(returns).to_dict()
+                plots_data['rolling_volatility'] = self._clean_json_value(qs.stats.rolling_volatility(returns).to_dict())
             except Exception as e:
                 logger.warning(f"Error calculando rolling_volatility: {str(e)}")
                 plots_data['rolling_volatility'] = {}
             
             try:
-                plots_data['drawdown_series'] = qs.stats.to_drawdown_series(returns).to_dict()
+                plots_data['drawdown_series'] = self._clean_json_value(qs.stats.to_drawdown_series(returns).to_dict())
             except Exception as e:
                 logger.warning(f"Error calculando drawdown_series: {str(e)}")
                 plots_data['drawdown_series'] = {}
             
             try:
-                plots_data['monthly_returns_heatmap'] = qs.stats.monthly_returns(returns).to_dict()
+                plots_data['monthly_returns_heatmap'] = self._clean_json_value(qs.stats.monthly_returns(returns).to_dict())
             except Exception as e:
                 logger.warning(f"Error calculando monthly_returns_heatmap: {str(e)}")
                 plots_data['monthly_returns_heatmap'] = {}
             
             try:
-                plots_data['distribution_stats'] = {
-                    'mean': float(returns.mean()),
-                    'std': float(returns.std()),
-                    'skew': float(qs.stats.skew(returns)),
-                    'kurtosis': float(qs.stats.kurtosis(returns))
-                }
+                plots_data['distribution_stats'] = self._clean_json_value({
+                    'mean': returns.mean(),
+                    'std': returns.std(),
+                    'skew': qs.stats.skew(returns),
+                    'kurtosis': qs.stats.kurtosis(returns)
+                })
             except Exception as e:
                 logger.warning(f"Error calculando distribution_stats: {str(e)}")
                 plots_data['distribution_stats'] = {
@@ -313,6 +440,7 @@ class QuantStatsService:
                     'r_squared': qs.stats.r_squared(returns, benchmark_returns)
                 }
             
+            # No aplicar limpieza al reporte completo, ya se aplicó a cada sección individualmente
             logger.info(f"Reporte completo generado con {len(report_data)} secciones")
             return report_data
             

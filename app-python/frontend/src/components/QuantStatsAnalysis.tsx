@@ -133,9 +133,14 @@ const QuantStatsAnalysis: React.FC<QuantStatsAnalysisProps> = ({ trades, initial
   };
 
   const renderBasicStats = () => {
-    if (!quantStatsData?.basic_stats) return null;
+    console.log('renderBasicStats - quantStatsData:', quantStatsData);
+    if (!quantStatsData?.basic_stats) {
+      console.log('No basic_stats found');
+      return <div className="text-gray-500">No hay datos de métricas disponibles</div>;
+    }
 
     const stats = quantStatsData.basic_stats;
+    console.log('renderBasicStats - stats:', stats);
 
     return (
       <div className="space-y-6">
@@ -148,7 +153,7 @@ const QuantStatsAnalysis: React.FC<QuantStatsAnalysisProps> = ({ trades, initial
           {renderMetricCard('Win Rate', stats.win_rate, 'percentage')}
           {renderMetricCard('Profit Factor', stats.profit_factor, 'number')}
           {renderMetricCard('Ratio Calmar', stats.calmar_ratio, 'number')}
-          {renderMetricCard('Ratio de Información', stats.information_ratio, 'number')}
+          {/* {renderMetricCard('Ratio de Información', stats.information_ratio, 'number')} */}
           {renderMetricCard('Asimetría', stats.skewness, 'number')}
           {renderMetricCard('Curtosis', stats.kurtosis, 'number')}
           {renderMetricCard('VaR 95%', stats.var_95, 'percentage')}
@@ -189,9 +194,14 @@ const QuantStatsAnalysis: React.FC<QuantStatsAnalysisProps> = ({ trades, initial
   };
 
   const renderDrawdownDetails = () => {
-    if (!quantStatsData?.drawdown_details?.drawdown_details) return null;
+    console.log('renderDrawdownDetails - quantStatsData:', quantStatsData);
+    if (!quantStatsData?.drawdown_details?.drawdown_details) {
+      console.log('No drawdown_details found');
+      return <div className="text-gray-500">No hay datos de drawdown disponibles</div>;
+    }
 
     const drawdowns = quantStatsData.drawdown_details.drawdown_details;
+    console.log('renderDrawdownDetails - drawdowns:', drawdowns);
 
     return (
       <div className="space-y-4">
@@ -225,9 +235,14 @@ const QuantStatsAnalysis: React.FC<QuantStatsAnalysisProps> = ({ trades, initial
   };
 
   const renderPlotsData = () => {
-    if (!quantStatsData?.plots_data) return null;
+    console.log('renderPlotsData - quantStatsData:', quantStatsData);
+    if (!quantStatsData?.plots_data) {
+      console.log('No plots_data found');
+      return <div className="text-gray-500">No hay datos de visualizaciones disponibles</div>;
+    }
 
     const plots = quantStatsData.plots_data;
+    console.log('renderPlotsData - plots:', plots);
 
     return (
       <div className="space-y-6">
