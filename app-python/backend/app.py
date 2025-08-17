@@ -7,10 +7,7 @@ from typing import Optional, List, Dict, Any
 import logging
 
 from core.config import settings
-from services.sqlite_client import (
-    save_ticks, load_ticks_by_dataset, create_dataset, get_all_datasets, 
-    get_dataset_by_id, update_dataset, delete_dataset
-)
+from services.database_factory import DatabaseFactory
 from services.csv_ingest import process_csv_upload
 from services.transform import apply_transformations
 from services.backtest import run_backtest, run_multi_dataset_backtest
@@ -37,7 +34,9 @@ app.add_middleware(
         "http://localhost:5173", 
         "http://127.0.0.1:5173",
         "http://localhost:3000", 
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3001"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -70,12 +69,15 @@ async def upload_csv(
         # Procesar el CSV
         df, freq_detected, rows_count = await process_csv_upload(file)
         
+        # Obtener funciones de base de datos
+        db_functions = DatabaseFactory.get_database_functions()
+        
         # Crear el dataset
-        dataset = create_dataset(dataset_name, dataset_description)
+        dataset = db_functions.create_dataset(dataset_name, dataset_description)
         dataset_id = dataset['id']
         
-        # Guardar en SQLite
-        save_ticks(dataset_id, df)
+        # Guardar en base de datos
+        db_functions.save_ticks(dataset_id, df)
         
         return UploadResponse(
             ok=True,
@@ -98,16 +100,19 @@ async def run_backtest_endpoint(request: BacktestRequest):
     Ejecuta un backtest con los parámetros especificados.
     """
     try:
+        # Obtener funciones de base de datos
+        db_functions = DatabaseFactory.get_database_functions()
+        
         # Verificar que el dataset existe
-        dataset = get_dataset_by_id(request.dataset_id)
+        dataset = db_functions.get_dataset_by_id(request.dataset_id)
         if not dataset:
             raise HTTPException(
                 status_code=404, 
                 detail=f"Dataset con ID {request.dataset_id} no encontrado."
             )
         
-        # Cargar datos desde SQLite
-        df = load_ticks_by_dataset(request.dataset_id)
+        # Cargar datos desde base de datos
+        df = db_functions.load_ticks_by_dataset(request.dataset_id)
         
         if df.empty:
             raise HTTPException(
@@ -124,9 +129,9 @@ async def run_backtest_endpoint(request: BacktestRequest):
             strategy = request.multi_dataset_crossover_strategy
             
             # Cargar datasets adicionales
-            df1 = load_ticks_by_dataset(strategy.dataset1_id)
-            df2 = load_ticks_by_dataset(strategy.dataset2_id)
-            price_df = load_ticks_by_dataset(strategy.price_dataset_id)
+            df1 = db_functions.load_ticks_by_dataset(strategy.dataset1_id)
+            df2 = db_functions.load_ticks_by_dataset(strategy.dataset2_id)
+            price_df = db_functions.load_ticks_by_dataset(strategy.price_dataset_id)
             
             if df1.empty or df2.empty or price_df.empty:
                 raise HTTPException(
@@ -174,7 +179,8 @@ async def get_datasets():
     Obtiene todos los datasets disponibles.
     """
     try:
-        datasets = get_all_datasets()
+        db_functions = DatabaseFactory.get_database_functions()
+        datasets = db_functions.get_all_datasets()
         return datasets
         
     except Exception as e:
@@ -187,7 +193,8 @@ async def get_dataset(dataset_id: int):
     Obtiene un dataset específico por ID.
     """
     try:
-        dataset = get_dataset_by_id(dataset_id)
+        db_functions = DatabaseFactory.get_database_functions()
+        dataset = db_functions.get_dataset_by_id(dataset_id)
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset no encontrado")
         
@@ -203,13 +210,15 @@ async def update_dataset_endpoint(dataset_id: int, request: UpdateDatasetRequest
     Actualiza un dataset existente.
     """
     try:
+        db_functions = DatabaseFactory.get_database_functions()
+        
         # Verificar que el dataset existe
-        dataset = get_dataset_by_id(dataset_id)
+        dataset = db_functions.get_dataset_by_id(dataset_id)
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset no encontrado")
         
         # Actualizar el dataset
-        updated_dataset = update_dataset(
+        updated_dataset = db_functions.update_dataset(
             dataset_id, 
             name=request.name, 
             description=request.description
@@ -227,13 +236,15 @@ async def delete_dataset_endpoint(dataset_id: int):
     Elimina un dataset y todos sus datos.
     """
     try:
+        db_functions = DatabaseFactory.get_database_functions()
+        
         # Verificar que el dataset existe
-        dataset = get_dataset_by_id(dataset_id)
+        dataset = db_functions.get_dataset_by_id(dataset_id)
         if not dataset:
             raise HTTPException(status_code=404, detail="Dataset no encontrado")
         
         # Eliminar el dataset
-        delete_dataset(dataset_id)
+        db_functions.delete_dataset(dataset_id)
         
         return {"message": f"Dataset '{dataset['name']}' eliminado correctamente"}
         
