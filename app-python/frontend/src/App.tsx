@@ -6,7 +6,7 @@ import { ParamsForm } from './components/ParamsForm';
 import { KpiCards } from './components/KpiCards';
 import { EquityChart } from './components/EquityChart';
 import { TradesTable } from './components/TradesTable';
-import QuantStatsAnalysis from './components/QuantStatsAnalysis';
+import PyfolioAnalysis from './components/PyfolioAnalysis';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -107,10 +107,10 @@ function AppContent() {
           <TradesTable trades={backtestResult?.trades || []} />
         </div>
 
-        {/* Análisis QuantStats - Ancho completo */}
+        {/* Análisis Pyfolio - Ancho completo */}
         {backtestResult?.trades && backtestResult.trades.length > 0 && (
           <div className="mt-8">
-            <QuantStatsAnalysis 
+            <PyfolioAnalysis 
               trades={backtestResult.trades} 
               initialCash={initialCapital || 10000} 
             />

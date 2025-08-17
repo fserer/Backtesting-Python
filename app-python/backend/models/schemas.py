@@ -96,7 +96,7 @@ class EquityPoint(BaseModel):
     timestamp: str
     equity: float
 
-class QuantStatsRequest(BaseModel):
+class PyfolioRequest(BaseModel):
     trades: List[Dict]
     initial_cash: float = Field(10000.0, gt=0.0)
 

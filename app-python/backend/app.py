@@ -14,10 +14,10 @@ from services.sqlite_client import (
 from services.csv_ingest import process_csv_upload
 from services.transform import apply_transformations
 from services.backtest import run_backtest, run_multi_dataset_backtest
-from services.quantstats_service import QuantStatsService
+from services.pyfolio_service import PyfolioService
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
-    CreateDatasetRequest, UpdateDatasetRequest, QuantStatsRequest
+    CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest
 )
 
 # Configurar logging
@@ -241,39 +241,33 @@ async def delete_dataset_endpoint(dataset_id: int):
         logger.error(f"Error eliminando dataset {dataset_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/quantstats")
-async def generate_quantstats_analysis(request: QuantStatsRequest):
+@app.post("/api/pyfolio")
+async def generate_pyfolio_analysis(request: PyfolioRequest):
     """
-    Genera análisis completo de QuantStats basado en los trades del backtesting.
+    Genera análisis completo de Pyfolio basado en los trades del backtesting.
     
     Args:
         trades: Lista de trades del backtesting
         initial_cash: Capital inicial (por defecto 10000.0)
         
     Returns:
-        Análisis completo de QuantStats con métricas, drawdowns y datos para visualizaciones
+        Análisis completo de Pyfolio con métricas, drawdowns y datos para visualizaciones
     """
     try:
         if not request.trades:
             raise HTTPException(status_code=400, detail="No hay trades para analizar")
         
-        # Inicializar servicio de QuantStats
-        quantstats_service = QuantStatsService()
-        
-        # Generar serie de retornos desde los trades
-        returns_series = quantstats_service.generate_returns_series(request.trades, request.initial_cash)
-        
-        if returns_series.empty:
-            raise HTTPException(status_code=400, detail="No se pudo generar serie de retornos válida")
+        # Inicializar servicio de Pyfolio
+        pyfolio_service = PyfolioService()
         
         # Generar análisis completo
-        analysis = quantstats_service.generate_full_report(returns_series)
+        analysis = pyfolio_service.generate_full_report(request.trades, request.initial_cash)
         
-        logger.info(f"Análisis de QuantStats generado para {len(request.trades)} trades")
+        logger.info(f"Análisis de Pyfolio generado para {len(request.trades)} trades")
         return analysis
         
     except Exception as e:
-        logger.error(f"Error generando análisis de QuantStats: {str(e)}")
+        logger.error(f"Error generando análisis de Pyfolio: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
