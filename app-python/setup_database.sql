@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS datasets (
 CREATE TABLE IF NOT EXISTS ticks (
     id SERIAL,
     dataset_id INTEGER NOT NULL,
-    t TIMESTAMP NOT NULL,
+    t TIMESTAMPTZ NOT NULL,
     v DOUBLE PRECISION NOT NULL,
     usd DOUBLE PRECISION NOT NULL,
     PRIMARY KEY (id, t),
@@ -30,7 +30,8 @@ CREATE INDEX IF NOT EXISTS idx_ticks_dataset_id ON ticks (dataset_id);
 CREATE INDEX IF NOT EXISTS idx_ticks_dataset_t ON ticks (dataset_id, t DESC);
 
 -- Create compression policy (compress data older than 7 days)
-SELECT add_compression_policy('ticks', INTERVAL '7 days');
+-- Note: Compression requires columnstore to be enabled
+-- SELECT add_compression_policy('ticks', INTERVAL '7 days');
 
 -- Create retention policy (keep data for 1 year)
 SELECT add_retention_policy('ticks', INTERVAL '1 year');
