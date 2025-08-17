@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy } from '@/lib/api';
 import { MultiDatasetSelector } from './MultiDatasetSelector';
 
@@ -68,7 +69,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
   React.useEffect(() => {
     const loadDatasets = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/datasets');
+        const response = await fetch(`${API_BASE_URL}/api/datasets`);
         if (response.ok) {
           const data = await response.json();
           setDatasets(data);
