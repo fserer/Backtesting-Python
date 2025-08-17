@@ -98,6 +98,16 @@ async def run_backtest_endpoint(request: BacktestRequest):
     Ejecuta un backtest con los parámetros especificados.
     """
     try:
+        # Debug: Log de la request recibida
+        logger.info(f"Backtest request recibida:")
+        logger.info(f"  - dataset_id: {request.dataset_id}")
+        logger.info(f"  - transform.v: {request.transform.v}")
+        logger.info(f"  - transform.usd: {request.transform.usd}")
+        logger.info(f"  - apply_to: {request.apply_to}")
+        logger.info(f"  - strategy_type: {request.strategy_type}")
+        logger.info(f"  - threshold_entry: {request.threshold_entry}")
+        logger.info(f"  - threshold_exit: {request.threshold_exit}")
+        
         # Verificar que el dataset existe
         dataset = get_dataset_by_id(request.dataset_id)
         if not dataset:
