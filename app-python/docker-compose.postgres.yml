@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: backtesting-postgres
+    environment:
+      POSTGRES_DB: backtesting
+      POSTGRES_USER: backtesting_user
+      POSTGRES_PASSWORD: backtesting_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./setup_database.sql:/docker-entrypoint-initdb.d/setup_database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U backtesting_user -d backtesting"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-postgres:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: app-python-backend-postgres
+    environment:
+      - DATABASE_URL=postgresql://backtesting_user:backtesting_password@postgres:5432/backtesting
+      - DATABASE_TYPE=postgresql
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend-postgres:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: app-python-frontend-postgres
+    ports:
+      - "3001:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8001
+    depends_on:
+      - backend-postgres
+
+volumes:
+  postgres_data:
