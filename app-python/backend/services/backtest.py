@@ -227,6 +227,15 @@ def generate_threshold_signals(
     
     series = df[signal_column]
     
+    # Debug: Verificar qué columna se está usando y sus valores
+    logger.info(f"Generando señales de umbral:")
+    logger.info(f"  - apply_to: {apply_to}")
+    logger.info(f"  - signal_column: {signal_column}")
+    logger.info(f"  - threshold_entry: {threshold_entry}")
+    logger.info(f"  - threshold_exit: {threshold_exit}")
+    logger.info(f"  - Series stats: min={series.min():.4f}, max={series.max():.4f}, mean={series.mean():.4f}")
+    logger.info(f"  - Primeros 5 valores: {series.head().tolist()}")
+    
     # Generar señales de entrada (crossover hacia arriba)
     entries = (
         (series.shift(1) < threshold_entry) & 

@@ -27,8 +27,12 @@ def apply_transformations(df: pd.DataFrame, transform_config: Dict[str, Any]) ->
                 v_config['type'], 
                 v_config['period']
             )
+            logger.info(f"Transformación 'v': {v_config['type']} (periodo {v_config['period']})")
+            logger.info(f"  - Original stats: min={df['v'].min():.4f}, max={df['v'].max():.4f}, mean={df['v'].mean():.4f}")
+            logger.info(f"  - Transformado stats: min={df_transformed['v_transformed'].min():.4f}, max={df_transformed['v_transformed'].max():.4f}, mean={df_transformed['v_transformed'].mean():.4f}")
         else:
             df_transformed['v_transformed'] = df['v']
+            logger.info("Transformación 'v': none (sin transformar)")
         
         # Aplicar transformación a 'usd'
         if 'usd' in transform_config:
@@ -38,8 +42,10 @@ def apply_transformations(df: pd.DataFrame, transform_config: Dict[str, Any]) ->
                 usd_config['type'], 
                 usd_config['period']
             )
+            logger.info(f"Transformación 'usd': {usd_config['type']} (periodo {usd_config['period']})")
         else:
             df_transformed['usd_transformed'] = df['usd']
+            logger.info("Transformación 'usd': none (sin transformar)")
         
         logger.info("Transformaciones aplicadas correctamente")
         return df_transformed
