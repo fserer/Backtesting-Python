@@ -91,7 +91,7 @@ def filter_data_by_period(df: pd.DataFrame, period: str) -> pd.DataFrame:
     
     Args:
         df: DataFrame con columna 't' (timestamp)
-        period: Período a filtrar ('1w', '1m', '3m', '6m', '1y', 'ytd', '2y', '3y', '4y', '5y', '6y', '7y', '8y', '9y', '10y', 'all')
+        period: Período a filtrar ('1w', '1m', '3m', '6m', '1y', 'ytd', '2y', '3y', '4y', '5y', '6y', '7y', '8y', '9y', '10y', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', 'all')
     
     Returns:
         DataFrame filtrado
@@ -134,6 +134,18 @@ def filter_data_by_period(df: pd.DataFrame, period: str) -> pd.DataFrame:
         start_date = latest_date - pd.Timedelta(days=9*365)
     elif period == "10y":
         start_date = latest_date - pd.Timedelta(days=10*365)
+    elif period in ["2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"]:
+        # Filtrar por año específico
+        year = int(period)
+        start_date = pd.Timestamp(year, 1, 1, tz=latest_date.tz)
+        end_date = pd.Timestamp(year, 12, 31, 23, 59, 59, tz=latest_date.tz)
+        
+        # Filtrar datos por año específico
+        filtered_df = df[(df['t'] >= start_date) & (df['t'] <= end_date)].copy()
+        
+        logger.info(f"Filtrado por año '{period}': {len(filtered_df)} registros desde {start_date.strftime('%Y-%m-%d')} hasta {end_date.strftime('%Y-%m-%d')}")
+        
+        return filtered_df
     else:
         return df
     

@@ -52,7 +52,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       use_take_profit: true,
       use_stop_loss: true
     },
-    period: '1y' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | 'all',
+    period: '1y' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | '2015' | '2016' | '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025' | 'all',
     fees: 0.0005,
     slippage: 0.0002,
     init_cash: 10000
@@ -316,6 +316,17 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
                 <SelectItem value="8y">Últimos 8 Años</SelectItem>
                 <SelectItem value="9y">Últimos 9 Años</SelectItem>
                 <SelectItem value="10y">Últimos 10 Años</SelectItem>
+                <SelectItem value="2025">Año 2025</SelectItem>
+                <SelectItem value="2024">Año 2024</SelectItem>
+                <SelectItem value="2023">Año 2023</SelectItem>
+                <SelectItem value="2022">Año 2022</SelectItem>
+                <SelectItem value="2021">Año 2021</SelectItem>
+                <SelectItem value="2020">Año 2020</SelectItem>
+                <SelectItem value="2019">Año 2019</SelectItem>
+                <SelectItem value="2018">Año 2018</SelectItem>
+                <SelectItem value="2017">Año 2017</SelectItem>
+                <SelectItem value="2016">Año 2016</SelectItem>
+                <SelectItem value="2015">Año 2015</SelectItem>
                 <SelectItem value="all">Todo el Tiempo</SelectItem>
               </SelectContent>
             </Select>
