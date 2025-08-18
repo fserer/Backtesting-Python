@@ -99,10 +99,6 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
                 <p className="text-lg font-semibold">
                   {formatCurrency(fundingData.totalPositionValue)}
                 </p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <TrendingDown className="h-4 w-4" />
-                  Trades con Funding: {fundingData.tradesWithFunding} / {trades.length}
-                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">P&L Neto Total</p>
@@ -112,7 +108,7 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-3 gap-4 mt-4">
               <div>
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Clock className="h-4 w-4" />
@@ -120,6 +116,15 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
                 </p>
                 <p className="text-lg font-semibold">
                   {fundingData.averageDuration.toFixed(1)} días
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <TrendingDown className="h-4 w-4" />
+                  Trades con Funding
+                </p>
+                <p className="text-lg font-semibold">
+                  {fundingData.tradesWithFunding} / {trades.length}
                 </p>
               </div>
             </div>
