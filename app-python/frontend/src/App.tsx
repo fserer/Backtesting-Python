@@ -118,15 +118,15 @@ function AppContent() {
           </div>
         )}
 
-        {/* Análisis Pyfolio - Ancho completo */}
-        {backtestResult?.trades && backtestResult.trades.length > 0 && (
+        {/* Análisis Pyfolio - Ancho completo (OCULTO TEMPORALMENTE) */}
+        {/* {backtestResult?.trades && backtestResult.trades.length > 0 && (
           <div className="mt-8">
             <PyfolioAnalysis 
               trades={backtestResult.trades} 
               initialCash={initialCapital || 10000} 
             />
           </div>
-        )}
+        )} */}
 
         {/* Información adicional */}
         {uploadResult?.ok && (
