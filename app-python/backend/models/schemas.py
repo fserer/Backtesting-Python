@@ -61,7 +61,7 @@ class BacktestRequest(BaseModel):
         "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025",
         "all"
     ] = "all"
-    fees: float = Field(0.0005, ge=0.0, le=0.1)
+    fees: float = Field(0.00045, ge=0.0, le=0.1)
     slippage: float = Field(0.0002, ge=0.0, le=0.1)
     init_cash: float = Field(10000.0, gt=0.0)
     override_freq: Optional[str] = None

@@ -53,7 +53,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       use_stop_loss: true
     },
     period: '1y' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | '2015' | '2016' | '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025' | 'all',
-    fees: 0.0005,
+    fees: 0.00045,
     slippage: 0.0002,
     init_cash: 10000
   });

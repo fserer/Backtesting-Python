@@ -17,7 +17,10 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
         totalPositionValue: 0,
         averageDuration: 0,
         totalDuration: 0,
-        tradesWithFunding: 0
+        tradesWithFunding: 0,
+        totalPnL: 0,
+        totalFees: 0,
+        netPnL: 0
       };
     }
 
@@ -25,6 +28,8 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
     let totalPositionValue = 0;
     let totalDuration = 0;
     let tradesWithFunding = 0;
+    let totalPnL = 0;
+    let totalFees = 0;
 
     trades.forEach(trade => {
       if (trade.entry_date && trade.exit_date && trade.size > 0) {
@@ -44,16 +49,25 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
         totalDuration += durationDays;
         tradesWithFunding++;
       }
+      
+      // Sumar P&L y comisiones de todos los trades
+      totalPnL += trade.pnl || 0;
+      totalFees += (trade.entry_fees || 0) + (trade.exit_fees || 0);
     });
 
     const averageDuration = tradesWithFunding > 0 ? totalDuration / tradesWithFunding : 0;
+    // El P&L de trades ya incluye las comisiones, solo restamos el funding
+    const netPnL = totalPnL - totalFundingCost;
 
     return {
       totalFundingCost,
       totalPositionValue,
       averageDuration,
       totalDuration,
-      tradesWithFunding
+      tradesWithFunding,
+      totalPnL,
+      totalFees,
+      netPnL
     };
   };
 
@@ -73,7 +87,7 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
       <CardContent className="space-y-4">
         {trades && trades.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Coste Total de Funding</p>
                 <p className="text-2xl font-bold text-red-600">
@@ -85,10 +99,20 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
                 <p className="text-lg font-semibold">
                   {formatCurrency(fundingData.totalPositionValue)}
                 </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                  <TrendingDown className="h-4 w-4" />
+                  Trades con Funding: {fundingData.tradesWithFunding} / {trades.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">P&L Neto Total</p>
+                <p className={`text-2xl font-bold ${fundingData.netPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(fundingData.netPnL)}
+                </p>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
                   <Clock className="h-4 w-4" />
@@ -98,14 +122,30 @@ export function FundingCost({ trades, fundingRateAnnual }: FundingCostProps) {
                   {fundingData.averageDuration.toFixed(1)} días
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <TrendingDown className="h-4 w-4" />
-                  Trades con Funding
-                </p>
-                <p className="text-lg font-semibold">
-                  {fundingData.tradesWithFunding} / {trades.length}
-                </p>
+            </div>
+
+            {/* Desglose del P&L Neto */}
+            <div className="pt-2 border-t">
+              <p className="text-sm font-medium text-muted-foreground mb-2">Desglose del P&L Neto:</p>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>P&L de Trades (con comisiones):</span>
+                  <span className={fundingData.totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {formatCurrency(fundingData.totalPnL)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>- Coste de Funding:</span>
+                  <span className="text-red-600">
+                    -{formatCurrency(fundingData.totalFundingCost)}
+                  </span>
+                </div>
+                <div className="flex justify-between font-medium border-t pt-1">
+                  <span>= P&L Neto Total:</span>
+                  <span className={fundingData.netPnL >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {formatCurrency(fundingData.netPnL)}
+                  </span>
+                </div>
               </div>
             </div>
 
