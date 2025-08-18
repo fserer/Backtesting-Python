@@ -263,3 +263,56 @@ def update_dataset_row_count(dataset_id: int):
     except Exception as e:
         logger.error(f"Error actualizando contador de registros: {str(e)}")
         raise e
+
+def get_dataset_by_name(dataset_name: str) -> Optional[Dict[str, Any]]:
+    """Obtiene un dataset por su nombre."""
+    try:
+        with sqlite_client.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, name, description, row_count, created_at, updated_at
+                FROM datasets
+                WHERE name = ?
+            ''', (dataset_name,))
+            
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'id': row[0],
+                    'name': row[1],
+                    'description': row[2],
+                    'row_count': row[3],
+                    'created_at': row[4],
+                    'updated_at': row[5]
+                }
+            return None
+    except Exception as e:
+        logger.error(f"Error obteniendo dataset {dataset_name}: {str(e)}")
+        return None
+
+def get_last_tick(dataset_id: int) -> Optional[Dict[str, Any]]:
+    """Obtiene el último tick de un dataset."""
+    try:
+        with sqlite_client.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, dataset_id, t, v, usd
+                FROM ticks_new
+                WHERE dataset_id = ?
+                ORDER BY t DESC
+                LIMIT 1
+            ''', (dataset_id,))
+            
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'id': row[0],
+                    'dataset_id': row[1],
+                    't': row[2],
+                    'v': row[3],
+                    'usd': row[4]
+                }
+            return None
+    except Exception as e:
+        logger.error(f"Error obteniendo último tick para dataset {dataset_id}: {str(e)}")
+        return None

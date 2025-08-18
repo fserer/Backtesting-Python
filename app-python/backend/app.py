@@ -11,6 +11,7 @@ from services.sqlite_client import (
     save_ticks, load_ticks_by_dataset, create_dataset, get_all_datasets, 
     get_dataset_by_id, update_dataset, delete_dataset
 )
+from services.nodecharts_service import NodeChartsService
 from services.csv_ingest import process_csv_upload
 from services.transform import apply_transformations
 from services.backtest import run_backtest, run_multi_dataset_backtest
@@ -249,6 +250,61 @@ async def delete_dataset_endpoint(dataset_id: int):
         
     except Exception as e:
         logger.error(f"Error eliminando dataset {dataset_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/datasets/{dataset_id}/update")
+async def update_dataset_from_nodecharts(dataset_id: int):
+    """
+    Actualiza un dataset con datos nuevos desde NodeCharts.
+    """
+    try:
+        # Obtener el dataset
+        dataset = get_dataset_by_id(dataset_id)
+        if not dataset:
+            raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} no encontrado")
+        
+        # Inicializar servicio de NodeCharts
+        api_key = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZSI6MCwidXNlcmlkIjoyNTUyLCJjcmVhdGlvbnRpbWUiOjE3MTM3Nzc0NTJ9.bFd4Y_134nmvUjboy8CZRkMRc8WngTA9_zDx18qAkXE"
+        nodecharts_service = NodeChartsService(api_key)
+        
+        # Actualizar el dataset
+        success, rows_added = nodecharts_service.update_dataset(dataset['name'], None)
+        
+        if success:
+            return {
+                "message": f"Dataset {dataset['name']} actualizado correctamente",
+                "rows_added": rows_added,
+                "dataset_id": dataset_id
+            }
+        else:
+            raise HTTPException(status_code=500, detail=f"Error actualizando dataset {dataset['name']}")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error actualizando dataset {dataset_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/datasets/update-all")
+async def update_all_datasets_from_nodecharts():
+    """
+    Actualiza todos los datasets que tienen mapeo con NodeCharts.
+    """
+    try:
+        # Inicializar servicio de NodeCharts
+        api_key = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZSI6MCwidXNlcmlkIjoyNTUyLCJjcmVhdGlvbnRpbWUiOjE3MTM3Nzc0NTJ9.bFd4Y_134nmvUjboy8CZRkMRc8WngTA9_zDx18qAkXE"
+        nodecharts_service = NodeChartsService(api_key)
+        
+        # Actualizar todos los datasets
+        results = nodecharts_service.update_all_datasets(None)
+        
+        return {
+            "message": "Actualización completada",
+            "results": results
+        }
+            
+    except Exception as e:
+        logger.error(f"Error actualizando todos los datasets: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/pyfolio")
