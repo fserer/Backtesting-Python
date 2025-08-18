@@ -356,9 +356,7 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
         max_drawdown = portfolio.max_drawdown()
         trades_count = len(portfolio.trades.records_readable)
         
-        # Calcular retorno de trades vs retorno del precio subyacente
-        buy_and_hold_return = calculate_buy_and_hold_return(df)
-        trades_only_return = calculate_trades_only_return(portfolio, df)
+        
         
         # Información detallada de operaciones
         trades_data = []
@@ -445,9 +443,7 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
                 'total_return': safe_float(total_return),
                 'sharpe': safe_float(sharpe_ratio),
                 'max_drawdown': safe_float(max_drawdown),
-                'trades': int(trades_count),
-                'buy_and_hold_return': safe_float(buy_and_hold_return),
-                'trades_only_return': safe_float(trades_only_return)
+                'trades': int(trades_count)
             },
             'equity': equity_data,
             'trades': trades_data,
@@ -774,69 +770,4 @@ def apply_take_profit_stop_loss(
         logger.error(f"Error aplicando TP/SL: {str(e)}")
         raise e
 
-def calculate_buy_and_hold_return(df: pd.DataFrame) -> float:
-    """
-    Calcula el retorno de una estrategia buy and hold (comprar y mantener).
-    
-    Args:
-        df: DataFrame con precios USD
-        
-    Returns:
-        Retorno total del buy and hold
-    """
-    try:
-        if len(df) < 2:
-            return 0.0
-        
-        # Obtener precios USD
-        prices = df['usd'].values
-        
-        # Calcular retorno total
-        initial_price = prices[0]
-        final_price = prices[-1]
-        
-        buy_and_hold_return = (final_price - initial_price) / initial_price
-        
-        logger.info(f"Buy and Hold: {initial_price:.2f} -> {final_price:.2f} = {buy_and_hold_return:.4f} ({buy_and_hold_return*100:.2f}%)")
-        
-        return buy_and_hold_return
-        
-    except Exception as e:
-        logger.error(f"Error calculando buy and hold return: {str(e)}")
-        return 0.0
 
-def calculate_trades_only_return(portfolio: vbt.Portfolio, df: pd.DataFrame) -> float:
-    """
-    Calcula el retorno solo de los trades (sin el movimiento del precio subyacente).
-    
-    Args:
-        portfolio: Objeto Portfolio de vectorbt
-        df: DataFrame original con timestamps
-        
-    Returns:
-        Retorno solo de los trades
-    """
-    try:
-        # Obtener el retorno total del portfolio
-        total_return = portfolio.total_return()
-        
-        # Calcular el retorno buy and hold
-        buy_and_hold_return = calculate_buy_and_hold_return(df)
-        
-        # El retorno solo de trades es la diferencia
-        # Fórmula: (1 + total_return) = (1 + buy_and_hold_return) * (1 + trades_only_return)
-        # Por lo tanto: trades_only_return = (1 + total_return) / (1 + buy_and_hold_return) - 1
-        
-        if buy_and_hold_return == -1.0:  # Evitar división por cero
-            trades_only_return = total_return
-        else:
-            trades_only_return = (1 + total_return) / (1 + buy_and_hold_return) - 1
-        
-        logger.info(f"Trades Only Return: {trades_only_return:.4f} ({trades_only_return*100:.2f}%)")
-        logger.info(f"Descomposición: Total={total_return:.4f}, Buy&Hold={buy_and_hold_return:.4f}, Trades={trades_only_return:.4f}")
-        
-        return trades_only_return
-        
-    except Exception as e:
-        logger.error(f"Error calculando trades only return: {str(e)}")
-        return 0.0

@@ -12,7 +12,7 @@ export function KpiCards({ results, initialCapital }: KpiCardsProps) {
   if (!results) {
     return (
       <div className="grid grid-cols-2 gap-4">
-        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Cargando...</CardTitle>
@@ -76,30 +76,7 @@ export function KpiCards({ results, initialCapital }: KpiCardsProps) {
         </CardContent>
       </Card>
 
-      {/* Segunda fila: Retorno Buy & Hold y Retorno Solo Trades */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Retorno Buy & Hold</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold ${getValueColor(results.buy_and_hold_return || 0)}`}>
-            {formatPercentage(results.buy_and_hold_return || 0)}
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Retorno Solo Trades</CardTitle>
-          <Activity className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className={`text-2xl font-bold ${getValueColor(results.trades_only_return || 0)}`}>
-            {formatPercentage(results.trades_only_return || 0)}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Tercera fila: Máx. Drawdown y Operaciones */}
       <Card>

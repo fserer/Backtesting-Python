@@ -119,8 +119,6 @@ class BacktestResults(BaseModel):
     sharpe: float
     max_drawdown: float
     trades: int
-    buy_and_hold_return: float
-    trades_only_return: float
 
 class BacktestResponse(BaseModel):
     results: BacktestResults
