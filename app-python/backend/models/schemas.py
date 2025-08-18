@@ -57,7 +57,9 @@ class BacktestRequest(BaseModel):
     multi_dataset_crossover_strategy: Optional[MultiDatasetCrossoverStrategy] = None
     period: Literal[
         "1w", "1m", "3m", "6m", "1y", "ytd", 
-        "2y", "3y", "4y", "5y", "6y", "7y", "8y", "9y", "10y", "all"
+        "2y", "3y", "4y", "5y", "6y", "7y", "8y", "9y", "10y",
+        "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025",
+        "all"
     ] = "all"
     fees: float = Field(0.0005, ge=0.0, le=0.1)
     slippage: float = Field(0.0002, ge=0.0, le=0.1)
