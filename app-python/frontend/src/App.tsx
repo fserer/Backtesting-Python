@@ -113,7 +113,7 @@ function AppContent() {
           <div className="mt-8">
             <FundingCost 
               trades={backtestResult.trades} 
-              fundingRateAnnual={10} 
+              fundingRateAnnual={11.6} 
             />
           </div>
         )}
