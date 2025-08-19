@@ -8,6 +8,7 @@ import { EquityChart } from './components/EquityChart';
 import { TradesTable } from './components/TradesTable';
 import { FundingCost } from './components/FundingCost';
 import PyfolioAnalysis from './components/PyfolioAnalysis';
+import DatasetUpdater from './components/DatasetUpdater';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -72,6 +73,8 @@ function AppContent() {
               onDatasetSelect={setSelectedDataset}
               selectedDataset={selectedDataset || undefined}
             />
+            
+            <DatasetUpdater />
             
             <FileUploader
               onFileUpload={handleFileUpload}

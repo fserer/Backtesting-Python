@@ -1,0 +1,10 @@
+# Comando curl simple para actualizar datasets automáticamente
+# Para cron: */25 * * * * curl -s -X POST http://localhost:8000/api/datasets/update-all -H "Content-Type: application/json" >> /tmp/dataset_update.log 2>&1
+
+curl -s -X POST http://localhost:8000/api/datasets/update-all -H "Content-Type: application/json"
+
+# Con logging:
+curl -s -X POST http://localhost:8000/api/datasets/update-all -H "Content-Type: application/json" | jq '.' >> /tmp/dataset_update.log 2>&1
+
+# Con timestamp:
+echo "$(date): Actualizando datasets..." >> /tmp/dataset_update.log && curl -s -X POST http://localhost:8000/api/datasets/update-all -H "Content-Type: application/json" >> /tmp/dataset_update.log 2>&1
