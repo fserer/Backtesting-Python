@@ -123,6 +123,9 @@ class StrategiesService:
                 # P&L Neto
                 net_pnl = total_pnl - total_costs
                 
+                # Obtener configuración formateada para mostrar
+                formatted_config = self._format_configuration_for_display(configuration)
+                
                 strategies.append({
                     "id": strategy_id,
                     "user_id": user_id,
@@ -135,7 +138,8 @@ class StrategiesService:
                     "num_trades": num_trades,
                     "total_pnl": total_pnl,
                     "total_costs": total_costs,
-                    "net_pnl": net_pnl
+                    "net_pnl": net_pnl,
+                    "formatted_config": formatted_config
                 })
             
             conn.close()
@@ -178,6 +182,9 @@ class StrategiesService:
                 logger.error(f"Error parseando JSON para estrategia {strategy_id}")
                 return None
             
+            # Obtener configuración formateada para mostrar
+            formatted_config = self._format_configuration_for_display(configuration)
+            
             return {
                 "id": strategy_id,
                 "user_id": user_id,
@@ -186,7 +193,8 @@ class StrategiesService:
                 "strategy_type": strategy_type,
                 "configuration": configuration,
                 "results": results,
-                "created_at": created_at
+                "created_at": created_at,
+                "formatted_config": formatted_config
             }
             
         except Exception as e:
@@ -237,6 +245,99 @@ class StrategiesService:
         except Exception as e:
             logger.error(f"Error obteniendo estrategias del usuario {user_id}: {e}")
             return []
+    
+    def _get_strategy_type_description(self, strategy_type: str, configuration: Dict[str, Any]) -> str:
+        """Obtiene una descripción detallada del tipo de estrategia"""
+        if strategy_type == "threshold":
+            return "Estrategia de Umbrales"
+        elif strategy_type == "crossover":
+            crossover = configuration.get('crossover_strategy', {})
+            entry_type = crossover.get('entry_type', 'SMA').upper()
+            exit_type = crossover.get('exit_type', 'SMA').upper()
+            entry_fast = crossover.get('entry_fast_period', 0)
+            entry_slow = crossover.get('entry_slow_period', 0)
+            exit_fast = crossover.get('exit_fast_period', 0)
+            exit_slow = crossover.get('exit_slow_period', 0)
+            return f"Cruce de Medias ({entry_type} {entry_fast}/{entry_slow} - {exit_type} {exit_fast}/{exit_slow})"
+        elif strategy_type == "multi_dataset_crossover":
+            return "Cruce Multi-Dataset"
+        else:
+            return strategy_type
+    
+    def _get_dataset_name(self, dataset_id: int) -> str:
+        """Obtiene el nombre del dataset por ID"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM datasets WHERE id = ?", (dataset_id,))
+            result = cursor.fetchone()
+            conn.close()
+            return result[0] if result else f"Dataset {dataset_id}"
+        except Exception as e:
+            logger.error(f"Error obteniendo nombre del dataset {dataset_id}: {e}")
+            return f"Dataset {dataset_id}"
+    
+    def _get_detailed_configuration(self, configuration: Dict[str, Any]) -> Dict[str, Any]:
+        """Obtiene una configuración detallada con información descriptiva"""
+        detailed_config = {
+            "dataset": {
+                "id": configuration.get('dataset_id'),
+                "name": self._get_dataset_name(configuration.get('dataset_id', 0))
+            },
+            "strategy_type": {
+                "internal": configuration.get('strategy_type'),
+                "description": self._get_strategy_type_description(
+                    configuration.get('strategy_type'), configuration
+                )
+            },
+            "period": configuration.get('period'),
+            "fees": configuration.get('fees'),
+            "slippage": configuration.get('slippage'),
+            "init_cash": configuration.get('init_cash'),
+            "apply_to": configuration.get('apply_to'),
+            "transformations": configuration.get('transform', {}),
+            "thresholds": {
+                "entry": configuration.get('threshold_entry'),
+                "exit": configuration.get('threshold_exit')
+            },
+            "crossover_strategy": configuration.get('crossover_strategy'),
+            "multi_dataset_crossover_strategy": configuration.get('multi_dataset_crossover_strategy')
+        }
+        return detailed_config
+    
+    def _format_configuration_for_display(self, configuration: Dict[str, Any]) -> Dict[str, Any]:
+        """Formatea la configuración para mostrar en la interfaz"""
+        detailed_config = self._get_detailed_configuration(configuration)
+        
+        # Formatear transformaciones
+        transform = detailed_config.get('transformations', {})
+        transform_text = []
+        if transform.get('v', {}).get('type') != 'none':
+            v_transform = transform.get('v', {})
+            transform_text.append(f"Indicador: {v_transform.get('type', '').upper()} {v_transform.get('period', '')}")
+        if transform.get('usd', {}).get('type') != 'none':
+            usd_transform = transform.get('usd', {})
+            transform_text.append(f"Precio: {usd_transform.get('type', '').upper()} {usd_transform.get('period', '')}")
+        
+        # Formatear estrategia de cruce
+        crossover_text = ""
+        if detailed_config.get('strategy_type', {}).get('internal') == 'crossover':
+            crossover = detailed_config.get('crossover_strategy', {})
+            if crossover:
+                crossover_text = f"Entrada: {crossover.get('entry_type', '').upper()} {crossover.get('entry_fast_period', '')}/{crossover.get('entry_slow_period', '')} | Salida: {crossover.get('exit_type', '').upper()} {crossover.get('exit_fast_period', '')}/{crossover.get('exit_slow_period', '')}"
+        
+        return {
+            "dataset_name": detailed_config.get('dataset', {}).get('name'),
+            "strategy_description": detailed_config.get('strategy_type', {}).get('description'),
+            "period": detailed_config.get('period'),
+            "fees_percentage": f"{detailed_config.get('fees', 0) * 100:.3f}%",
+            "init_cash_formatted": f"${detailed_config.get('init_cash', 0):,.0f}",
+            "transformations": transform_text,
+            "thresholds": detailed_config.get('thresholds'),
+            "crossover_details": crossover_text,
+            "apply_to": detailed_config.get('apply_to'),
+            "raw_configuration": configuration  # Configuración completa para referencia
+        }
     
     def delete_strategy(self, strategy_id: int, user_id: int) -> bool:
         """Elimina una estrategia (solo el propietario puede eliminarla)"""

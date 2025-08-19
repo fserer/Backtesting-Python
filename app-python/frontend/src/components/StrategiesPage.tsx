@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Alert, AlertDescription } from './ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Badge } from './ui/badge';
-import { ExternalLink, RefreshCw, Trash2 } from 'lucide-react';
+import { Eye, RefreshCw, Trash2 } from 'lucide-react';
 import { formatCurrency, formatPercentage } from '../lib/utils';
 
 interface Strategy {
@@ -18,18 +18,30 @@ interface Strategy {
   total_pnl: number;
   total_costs: number;
   net_pnl: number;
+  formatted_config: {
+    dataset_name: string;
+    strategy_description: string;
+    period: string;
+    fees_percentage: string;
+    init_cash_formatted: string;
+    transformations: string[];
+    thresholds?: { entry: number; exit: number };
+    crossover_details: string;
+    apply_to: string;
+    raw_configuration: any;
+  };
 }
 
 interface StrategiesPageProps {
-  onLoadStrategy: (strategyId: number) => void;
   currentUserId: number;
 }
 
-const StrategiesPage: React.FC<StrategiesPageProps> = ({ onLoadStrategy, currentUserId }) => {
+const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [deletingStrategy, setDeletingStrategy] = useState<number | null>(null);
+  const [expandedStrategy, setExpandedStrategy] = useState<number | null>(null);
 
   const fetchStrategies = async () => {
     try {
@@ -239,7 +251,7 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ onLoadStrategy, current
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary">
-                            {getStrategyTypeLabel(strategy.strategy_type)}
+                            {strategy.formatted_config.strategy_description}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono">
@@ -259,10 +271,10 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ onLoadStrategy, current
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => onLoadStrategy(strategy.id)}
-                              title="Cargar estrategia"
+                              onClick={() => setExpandedStrategy(expandedStrategy === strategy.id ? null : strategy.id)}
+                              title="Ver configuración"
                             >
-                              <ExternalLink className="h-3 w-3" />
+                              <Eye className="h-3 w-3" />
                             </Button>
                             {strategy.user_id === currentUserId && (
                               <Button
@@ -282,6 +294,51 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ onLoadStrategy, current
                             )}
                           </div>
                         </TableCell>
+                      </TableRow>
+                      {/* Fila expandida con configuración detallada */}
+                      {expandedStrategy === strategy.id && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="bg-gray-50 p-4">
+                            <div className="space-y-4">
+                              <h4 className="font-semibold text-gray-900">Configuración Detallada</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p><strong>Dataset:</strong> {strategy.formatted_config.dataset_name}</p>
+                                  <p><strong>Período:</strong> {strategy.formatted_config.period}</p>
+                                  <p><strong>Comisiones:</strong> {strategy.formatted_config.fees_percentage}</p>
+                                  <p><strong>Capital inicial:</strong> {strategy.formatted_config.init_cash_formatted}</p>
+                                  <p><strong>Aplicar a:</strong> {strategy.formatted_config.apply_to === 'v' ? 'Indicador' : 'Precio'}</p>
+                                </div>
+                                <div>
+                                  {strategy.formatted_config.transformations.length > 0 && (
+                                    <div>
+                                      <p><strong>Transformaciones:</strong></p>
+                                      <ul className="list-disc list-inside ml-2">
+                                        {strategy.formatted_config.transformations.map((transform, index) => (
+                                          <li key={index}>{transform}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {strategy.formatted_config.thresholds && (
+                                    <div>
+                                      <p><strong>Umbrales:</strong></p>
+                                      <p className="ml-2">Entrada: {strategy.formatted_config.thresholds.entry}</p>
+                                      <p className="ml-2">Salida: {strategy.formatted_config.thresholds.exit}</p>
+                                    </div>
+                                  )}
+                                  {strategy.formatted_config.crossover_details && (
+                                    <div>
+                                      <p><strong>Detalles de cruce:</strong></p>
+                                      <p className="ml-2">{strategy.formatted_config.crossover_details}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
                       </TableRow>
                     ))}
                   </TableBody>

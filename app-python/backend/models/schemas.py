@@ -163,6 +163,18 @@ class SaveStrategyRequest(BaseModel):
     configuration: Dict[str, Any]
     results: Dict[str, Any]
 
+class FormattedConfiguration(BaseModel):
+    dataset_name: str
+    strategy_description: str
+    period: str
+    fees_percentage: str
+    init_cash_formatted: str
+    transformations: List[str]
+    thresholds: Optional[Dict[str, float]]
+    crossover_details: str
+    apply_to: str
+    raw_configuration: Dict[str, Any]
+
 class StrategySummary(BaseModel):
     id: int
     user_id: int
@@ -174,6 +186,7 @@ class StrategySummary(BaseModel):
     total_pnl: float
     total_costs: float
     net_pnl: float
+    formatted_config: FormattedConfiguration
 
 class StrategyDetail(BaseModel):
     id: int
@@ -184,6 +197,7 @@ class StrategyDetail(BaseModel):
     configuration: Dict[str, Any]
     results: Dict[str, Any]
     created_at: str
+    formatted_config: FormattedConfiguration
 
 class StrategiesResponse(BaseModel):
     strategies: List[StrategySummary]

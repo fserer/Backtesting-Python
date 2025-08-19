@@ -498,7 +498,8 @@ async def get_all_strategies(current_user: Dict[str, Any] = Depends(get_current_
                 num_trades=strategy["num_trades"],
                 total_pnl=strategy["total_pnl"],
                 total_costs=strategy["total_costs"],
-                net_pnl=strategy["net_pnl"]
+                net_pnl=strategy["net_pnl"],
+                formatted_config=strategy["formatted_config"]
             ))
         
         return StrategiesResponse(

@@ -29,6 +29,24 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
 }) => {
   const [strategyName, setStrategyName] = useState('');
 
+  // Funciones auxiliares para mostrar información descriptiva
+  const getStrategyTypeDescription = (type: string, config: any) => {
+    if (type === 'threshold') {
+      return 'Estrategia de Umbrales';
+    } else if (type === 'crossover' && config?.crossover_strategy) {
+      const crossover = config.crossover_strategy;
+      return `Cruce de Medias (${crossover.entry_type.toUpperCase()} ${crossover.entry_fast_period}/${crossover.entry_slow_period} - ${crossover.exit_type.toUpperCase()} ${crossover.exit_fast_period}/${crossover.exit_slow_period})`;
+    } else if (type === 'multi_dataset_crossover') {
+      return 'Cruce Multi-Dataset';
+    }
+    return type;
+  };
+
+  const getDatasetName = (datasetId: number) => {
+    // Por ahora retornamos el ID, pero esto debería obtener el nombre real del dataset
+    return `Dataset ${datasetId}`;
+  };
+
   const handleSave = () => {
     if (strategyName.trim()) {
       onSave(strategyName.trim());
@@ -85,11 +103,29 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
               <div className="space-y-2">
                 <p className="font-semibold">Se guardará la siguiente información:</p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li><strong>Tipo de estrategia:</strong> {strategyType}</li>
-                  <li><strong>Dataset:</strong> {configuration?.dataset_id || 'N/A'}</li>
+                  <li><strong>Tipo de estrategia:</strong> {getStrategyTypeDescription(strategyType, configuration)}</li>
+                  <li><strong>Dataset:</strong> {getDatasetName(configuration?.dataset_id)}</li>
                   <li><strong>Período:</strong> {configuration?.period || 'N/A'}</li>
                   <li><strong>Comisiones:</strong> {(configuration?.fees * 100).toFixed(3)}%</li>
                   <li><strong>Capital inicial:</strong> ${configuration?.init_cash?.toLocaleString() || 'N/A'}</li>
+                  {configuration?.transform?.v?.type !== 'none' && (
+                    <li><strong>Transformación Indicador:</strong> {configuration.transform.v.type.toUpperCase()} {configuration.transform.v.period}</li>
+                  )}
+                  {configuration?.transform?.usd?.type !== 'none' && (
+                    <li><strong>Transformación Precio:</strong> {configuration.transform.usd.type.toUpperCase()} {configuration.transform.usd.period}</li>
+                  )}
+                  {configuration?.strategy_type === 'threshold' && (
+                    <>
+                      <li><strong>Umbral de entrada:</strong> {configuration?.threshold_entry}</li>
+                      <li><strong>Umbral de salida:</strong> {configuration?.threshold_exit}</li>
+                    </>
+                  )}
+                  {configuration?.strategy_type === 'crossover' && configuration?.crossover_strategy && (
+                    <>
+                      <li><strong>Entrada:</strong> {configuration.crossover_strategy.entry_type.toUpperCase()} {configuration.crossover_strategy.entry_fast_period}/{configuration.crossover_strategy.entry_slow_period}</li>
+                      <li><strong>Salida:</strong> {configuration.crossover_strategy.exit_type.toUpperCase()} {configuration.crossover_strategy.exit_fast_period}/{configuration.crossover_strategy.exit_slow_period}</li>
+                    </>
+                  )}
                   <li><strong>Resultados del backtest:</strong> {results?.trades?.length || 0} operaciones</li>
                   <li><strong>P&L Total:</strong> ${results?.total_pnl?.toFixed(2) || 'N/A'}</li>
                 </ul>

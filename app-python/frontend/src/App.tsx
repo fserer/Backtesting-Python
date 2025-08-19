@@ -147,33 +147,7 @@ function AppContent() {
     }
   };
 
-  const handleLoadStrategy = async (strategyId: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/strategies/${strategyId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
 
-      if (response.ok) {
-        const strategy = await response.json();
-        
-        // Cargar la configuración en el formulario
-        // Esto requeriría pasar la configuración al componente ParamsForm
-        // Por ahora, solo cambiamos a la página de backtesting
-        setCurrentPage('backtesting');
-        
-        // Opcional: mostrar mensaje
-        alert(`Estrategia "${strategy.strategy_name}" cargada. Configura los parámetros manualmente.`);
-      } else {
-        const errorData = await response.json();
-        alert(errorData.detail || 'Error cargando estrategia');
-      }
-    } catch (err) {
-      alert('Error de conexión al cargar estrategia');
-    }
-  };
 
   // Verificar token al cargar la aplicación
   useEffect(() => {
@@ -385,7 +359,6 @@ function AppContent() {
           </>
         ) : (
           <StrategiesPage 
-            onLoadStrategy={handleLoadStrategy}
             currentUserId={currentUser?.id || 0}
           />
         )}
