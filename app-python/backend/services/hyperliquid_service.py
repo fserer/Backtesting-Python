@@ -8,7 +8,7 @@ from fastapi import HTTPException, status
 logger = logging.getLogger(__name__)
 
 class HyperliquidService:
-    def __init__(self, db_path: str = "app/data/backtesting.db"):
+    def __init__(self, db_path: str = "/app/data/backtesting.db"):
         self.db_path = db_path
         # No inicializar la tabla en el constructor para evitar errores al importar
     
