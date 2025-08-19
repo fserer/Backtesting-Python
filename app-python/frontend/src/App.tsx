@@ -13,6 +13,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import SaveStrategyModal from './components/SaveStrategyModal';
 import StrategiesPage from './components/StrategiesPage';
+import Footer from './components/Footer';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -206,8 +207,9 @@ function AppContent() {
 
   // Mostrar dashboard si está autenticado
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1">
+        <div className="container mx-auto px-4 py-8">
         <header className="mb-8">
           <div className="flex justify-between items-center">
             <div>
@@ -374,7 +376,9 @@ function AppContent() {
           configuration={lastBacktestConfig}
           results={lastBacktestResults}
         />
+        </div>
       </div>
+      <Footer />
     </div>
   );
 }
