@@ -124,9 +124,51 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
     }
   }, [selectedPriceDataset]);
 
+  // Mapeo de períodos para descripción
+  const getPeriodDescription = (period: string) => {
+    const periodMap: { [key: string]: string } = {
+      '1w': 'Última Semana',
+      '1m': 'Último Mes',
+      '3m': 'Último Trimestre',
+      '6m': 'Últimos 6 Meses',
+      'ytd': 'Este Año (YTD)',
+      '1y': 'Último Año',
+      '2y': 'Últimos 2 Años',
+      '3y': 'Últimos 3 Años',
+      '4y': 'Últimos 4 Años',
+      '5y': 'Últimos 5 Años',
+      '6y': 'Últimos 6 Años',
+      '7y': 'Últimos 7 Años',
+      '8y': 'Últimos 8 Años',
+      '9y': 'Últimos 9 Años',
+      '10y': 'Últimos 10 Años',
+      '2025': 'Año 2025',
+      '2024': 'Año 2024',
+      '2023': 'Año 2023',
+      '2022': 'Año 2022',
+      '2021': 'Año 2021',
+      '2020': 'Año 2020',
+      '2019': 'Año 2019',
+      '2018': 'Año 2018',
+      '2017': 'Año 2017',
+      '2016': 'Año 2016',
+      '2015': 'Año 2015',
+      'all': 'Todo el Tiempo'
+    };
+    return periodMap[period] || period;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Añadir nombre del dataset y descripción del período
+    const paramsWithMetadata = {
+      ...formData,
+      dataset_name: selectedDataset?.name || '',
+      period_description: getPeriodDescription(formData.period)
+    };
+    
+    onSubmit(paramsWithMetadata);
   };
 
   const updateTransform = (field: 'v' | 'usd', key: keyof TransformConfig, value: any) => {

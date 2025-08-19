@@ -15,6 +15,8 @@ interface SaveStrategyModalProps {
   strategyType: string;
   configuration: any;
   results: any;
+  datasetName?: string;
+  periodDescription?: string;
 }
 
 const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
@@ -25,7 +27,9 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
   error,
   strategyType,
   configuration,
-  results
+  results,
+  datasetName,
+  periodDescription
 }) => {
   const [comments, setComments] = useState('');
 
@@ -43,7 +47,11 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
   };
 
   const getDatasetName = (datasetId: number) => {
-    // Por ahora retornamos el ID, pero esto debería obtener el nombre real del dataset
+    // Usar el nombre real del dataset si está disponible
+    if (datasetName) {
+      return datasetName;
+    }
+    // Fallback al ID si no hay nombre
     return `Dataset ${datasetId}`;
   };
 
@@ -90,7 +98,7 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li><strong>Tipo de estrategia:</strong> {getStrategyTypeDescription(strategyType, configuration)}</li>
                   <li><strong>Dataset:</strong> {getDatasetName(configuration?.dataset_id)}</li>
-                  <li><strong>Período:</strong> {configuration?.period || 'N/A'}</li>
+                  <li><strong>Período:</strong> {periodDescription || configuration?.period || 'N/A'}</li>
                   <li><strong>Comisiones:</strong> {(configuration?.fees * 100).toFixed(3)}%</li>
                   <li><strong>Capital inicial:</strong> ${configuration?.init_cash?.toLocaleString() || 'N/A'}</li>
                   {configuration?.transform?.v?.type !== 'none' && (

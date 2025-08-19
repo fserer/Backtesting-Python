@@ -62,14 +62,19 @@ class StrategiesService:
     
     def save_strategy(self, user_id: int, username: str, strategy_type: str, 
                      configuration: Dict[str, Any], results: Dict[str, Any], 
-                     comments: Optional[str] = None) -> Dict[str, Any]:
+                     comments: Optional[str] = None, dataset_name: Optional[str] = None) -> Dict[str, Any]:
         """Guarda una nueva estrategia"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
+            # Añadir el nombre del dataset a la configuración si se proporciona
+            config_with_dataset_name = configuration.copy()
+            if dataset_name:
+                config_with_dataset_name['dataset_name'] = dataset_name
+            
             # Convertir configuración y resultados a JSON
-            config_json = json.dumps(configuration, ensure_ascii=False)
+            config_json = json.dumps(config_with_dataset_name, ensure_ascii=False)
             results_json = json.dumps(results, ensure_ascii=False)
             
             cursor.execute("""
@@ -280,8 +285,13 @@ class StrategiesService:
         else:
             return strategy_type
     
-    def _get_dataset_name(self, dataset_id: int) -> str:
-        """Obtiene el nombre del dataset por ID"""
+    def _get_dataset_name(self, dataset_id: int, configuration: Dict[str, Any] = None) -> str:
+        """Obtiene el nombre del dataset por su ID o desde la configuración guardada"""
+        # Primero intentar obtener desde la configuración guardada
+        if configuration and 'dataset_name' in configuration:
+            return configuration['dataset_name']
+        
+        # Si no está en la configuración, intentar desde la base de datos SQLite
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -298,7 +308,7 @@ class StrategiesService:
         detailed_config = {
             "dataset": {
                 "id": configuration.get('dataset_id'),
-                "name": self._get_dataset_name(configuration.get('dataset_id', 0))
+                "name": self._get_dataset_name(configuration.get('dataset_id', 0), configuration)
             },
             "strategy_type": {
                 "internal": configuration.get('strategy_type'),

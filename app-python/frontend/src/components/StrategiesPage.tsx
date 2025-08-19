@@ -226,7 +226,6 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                     <TableRow>
                       <TableHead>Fecha</TableHead>
                       <TableHead>Usuario</TableHead>
-                      <TableHead>Comentarios</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Operaciones</TableHead>
                       <TableHead className="text-right">P&L</TableHead>
@@ -245,11 +244,7 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                           <TableCell>
                             <span className="font-medium">{strategy.username}</span>
                           </TableCell>
-                          <TableCell>
-                            <div className="max-w-xs truncate" title={strategy.comments || 'Sin comentarios'}>
-                              {strategy.comments || 'Sin comentarios'}
-                            </div>
-                          </TableCell>
+
                           <TableCell>
                             <Badge variant="secondary">
                               {strategy.formatted_config.strategy_description}
@@ -298,11 +293,12 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                         </TableRow>
                         {expandedStrategy === strategy.id && (
                           <TableRow>
-                            <TableCell colSpan={9} className="bg-gray-50 p-4">
+                            <TableCell colSpan={8} className="bg-gray-50 p-4">
                               <div className="space-y-4">
                                 <h4 className="font-semibold text-gray-900">Configuración Detallada</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                   <div>
+                                    <p><strong>Tipo de estrategia:</strong> {strategy.formatted_config.strategy_description}</p>
                                     <p><strong>Dataset:</strong> {strategy.formatted_config.dataset_name}</p>
                                     <p><strong>Período:</strong> {strategy.formatted_config.period}</p>
                                     <p><strong>Comisiones:</strong> {strategy.formatted_config.fees_percentage}</p>
@@ -335,6 +331,14 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                                     )}
                                   </div>
                                 </div>
+                                
+                                {/* Comentarios */}
+                                {strategy.comments && (
+                                  <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <p><strong>Comentarios:</strong></p>
+                                    <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{strategy.comments}</p>
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

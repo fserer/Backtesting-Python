@@ -457,13 +457,24 @@ async def save_strategy(
     Guarda una estrategia de backtesting.
     """
     try:
+        # Obtener el nombre del dataset
+        dataset_name = None
+        if strategy_data.configuration.get('dataset_id'):
+            try:
+                dataset = get_dataset_by_id(strategy_data.configuration['dataset_id'])
+                if dataset:
+                    dataset_name = dataset['name']
+            except Exception as e:
+                logger.warning(f"No se pudo obtener el nombre del dataset {strategy_data.configuration['dataset_id']}: {e}")
+        
         strategy = strategies_service.save_strategy(
             user_id=current_user["id"],
             username=current_user["username"],
             strategy_type=strategy_data.strategy_type,
             configuration=strategy_data.configuration,
             results=strategy_data.results,
-            comments=strategy_data.comments
+            comments=strategy_data.comments,
+            dataset_name=dataset_name
         )
         
         return {

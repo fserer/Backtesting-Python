@@ -39,6 +39,8 @@ function AppContent() {
   const [saveStrategyError, setSaveStrategyError] = useState('');
   const [lastBacktestConfig, setLastBacktestConfig] = useState<any>(null);
   const [lastBacktestResults, setLastBacktestResults] = useState<any>(null);
+  const [selectedDatasetName, setSelectedDatasetName] = useState<string>('');
+  const [selectedPeriodDescription, setSelectedPeriodDescription] = useState<string>('');
 
   const handleFileUpload = async (file: File, datasetName: string, datasetDescription?: string) => {
     setIsUploading(true);
@@ -71,6 +73,14 @@ function AppContent() {
       // Guardar configuración y resultados para poder guardar la estrategia
       setLastBacktestConfig(params);
       setLastBacktestResults(result);
+      
+      // Guardar nombre del dataset y descripción del período
+      if (params.dataset_name) {
+        setSelectedDatasetName(params.dataset_name);
+      }
+      if (params.period_description) {
+        setSelectedPeriodDescription(params.period_description);
+      }
     } catch (error) {
       console.error('Error running backtest:', error);
       // Aquí podrías mostrar un toast de error
@@ -375,6 +385,8 @@ function AppContent() {
           strategyType={lastBacktestConfig?.strategy_type || ''}
           configuration={lastBacktestConfig}
           results={lastBacktestResults}
+          datasetName={selectedDatasetName}
+          periodDescription={selectedPeriodDescription}
         />
         </div>
       </div>

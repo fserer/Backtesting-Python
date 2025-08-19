@@ -360,6 +360,7 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
         
         # Información detallada de operaciones
         trades_data = []
+        total_fees = 0.0
         if hasattr(portfolio.trades, 'records_readable') and len(portfolio.trades.records_readable) > 0:
             trades_df = portfolio.trades.records_readable
             
@@ -399,6 +400,10 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
                     # Calcular duración en períodos
                     duration_periods = exit_idx - entry_idx if entry_idx < len(df) and exit_idx < len(df) else 0
                     
+                    entry_fees = float(trade.get('Entry Fees', trade.get('entry_fees', 0)))
+                    exit_fees = float(trade.get('Exit Fees', trade.get('exit_fees', 0)))
+                    total_fees += entry_fees + exit_fees
+                    
                     trades_data.append({
                         'entry_date': entry_timestamp,
                         'exit_date': exit_timestamp,
@@ -408,8 +413,8 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
                         'pnl': float(trade.get('PnL', trade.get('pnl', 0))),
                         'return_pct': float(trade.get('Return', trade.get('return', 0))),
                         'duration': duration_periods,
-                        'entry_fees': float(trade.get('Entry Fees', trade.get('entry_fees', 0))),
-                        'exit_fees': float(trade.get('Exit Fees', trade.get('exit_fees', 0)))
+                        'entry_fees': entry_fees,
+                        'exit_fees': exit_fees
                     })
                 except Exception as e:
                     logger.error(f"Error procesando trade {idx}: {str(e)}")
@@ -447,6 +452,10 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
             },
             'equity': equity_data,
             'trades': trades_data,
+            'total_fees': total_fees,
+            'funding_cost': {
+                'totalFundingCost': 0.0  # Por ahora 0, se puede implementar después
+            },
             'freq': freq
         }
         
