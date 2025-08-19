@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Trade } from '@/lib/api';
+import { Trade } from '../lib/api';
 import { formatCurrency } from '../lib/utils';
 import { DollarSign, Clock, TrendingDown } from 'lucide-react';
 

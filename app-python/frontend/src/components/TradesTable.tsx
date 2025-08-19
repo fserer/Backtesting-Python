@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { Trade } from '@/lib/api';
+import { Trade } from '../lib/api';
 
 interface TradesTableProps {
   trades?: Trade[];

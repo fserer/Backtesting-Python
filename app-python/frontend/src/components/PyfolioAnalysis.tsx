@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { BarChart3, TrendingUp, FileText, Loader2 } from 'lucide-react';
 import { formatCurrency, formatPercentage, formatNumber } from '../lib/utils';
-import { apiClient } from '@/lib/api';
+import { apiClient } from '../lib/api';
 
 interface PyfolioAnalysisProps {
   trades: any[];

@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
-import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy } from '@/lib/api';
+import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy } from '../lib/api';
 import { MultiDatasetSelector } from './MultiDatasetSelector';
 
 interface ParamsFormProps {
