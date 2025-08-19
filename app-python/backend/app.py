@@ -18,10 +18,12 @@ from services.transform import apply_transformations
 from services.backtest import run_backtest, run_multi_dataset_backtest
 from services.pyfolio_service import PyfolioService
 from services.auth_service import AuthService
+from services.strategies_service import StrategiesService
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
     CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest,
-    UserLogin, UserRegister, Token, User
+    UserLogin, UserRegister, Token, User,
+    SaveStrategyRequest, StrategySummary, StrategyDetail, StrategiesResponse
 )
 
 # Configurar logging
@@ -31,6 +33,7 @@ logger = logging.getLogger(__name__)
 # Configuración de autenticación
 security = HTTPBearer()
 auth_service = AuthService()
+strategies_service = StrategiesService()
 
 app = FastAPI(
     title="Backtesting API",
@@ -440,6 +443,116 @@ async def verify_token(current_user: Dict[str, Any] = Depends(get_current_user))
     Verifica si el token es válido.
     """
     return {"valid": True, "user": current_user}
+
+# ============================================================================
+# ENDPOINTS DE ESTRATEGIAS
+# ============================================================================
+
+@app.post("/api/strategies/save", response_model=Dict[str, Any])
+async def save_strategy(
+    strategy_data: SaveStrategyRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Guarda una estrategia de backtesting.
+    """
+    try:
+        strategy = strategies_service.save_strategy(
+            user_id=current_user["id"],
+            username=current_user["username"],
+            strategy_name=strategy_data.strategy_name,
+            strategy_type=strategy_data.strategy_type,
+            configuration=strategy_data.configuration,
+            results=strategy_data.results
+        )
+        
+        return {
+            "message": "Estrategia guardada exitosamente",
+            "strategy": strategy
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error guardando estrategia: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/strategies", response_model=StrategiesResponse)
+async def get_all_strategies(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Obtiene todas las estrategias de todos los usuarios.
+    """
+    try:
+        strategies = strategies_service.get_all_strategies()
+        
+        # Convertir a StrategySummary
+        strategy_summaries = []
+        for strategy in strategies:
+            strategy_summaries.append(StrategySummary(
+                id=strategy["id"],
+                user_id=strategy["user_id"],
+                username=strategy["username"],
+                strategy_name=strategy["strategy_name"],
+                strategy_type=strategy["strategy_type"],
+                created_at=strategy["created_at"],
+                num_trades=strategy["num_trades"],
+                total_pnl=strategy["total_pnl"],
+                total_costs=strategy["total_costs"],
+                net_pnl=strategy["net_pnl"]
+            ))
+        
+        return StrategiesResponse(
+            strategies=strategy_summaries,
+            total_count=len(strategy_summaries)
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo estrategias: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/strategies/{strategy_id}", response_model=StrategyDetail)
+async def get_strategy_by_id(
+    strategy_id: int,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene una estrategia específica por ID.
+    """
+    try:
+        strategy = strategies_service.get_strategy_by_id(strategy_id)
+        if not strategy:
+            raise HTTPException(status_code=404, detail="Estrategia no encontrada")
+        
+        return StrategyDetail(**strategy)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo estrategia {strategy_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.delete("/api/strategies/{strategy_id}")
+async def delete_strategy(
+    strategy_id: int,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Elimina una estrategia (solo el propietario puede eliminarla).
+    """
+    try:
+        success = strategies_service.delete_strategy(strategy_id, current_user["id"])
+        if not success:
+            raise HTTPException(status_code=404, detail="Estrategia no encontrada o no tienes permisos para eliminarla")
+        
+        return {"message": "Estrategia eliminada exitosamente"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error eliminando estrategia {strategy_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 if __name__ == "__main__":
     import uvicorn

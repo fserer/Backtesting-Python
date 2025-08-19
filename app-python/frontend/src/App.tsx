@@ -11,6 +11,8 @@ import PyfolioAnalysis from './components/PyfolioAnalysis';
 import DatasetUpdater from './components/DatasetUpdater';
 import Login from './components/Login';
 import Register from './components/Register';
+import SaveStrategyModal from './components/SaveStrategyModal';
+import StrategiesPage from './components/StrategiesPage';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -28,6 +30,14 @@ function AppContent() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showRegister, setShowRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Estados de estrategias
+  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies'>('backtesting');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isSavingStrategy, setIsSavingStrategy] = useState(false);
+  const [saveStrategyError, setSaveStrategyError] = useState('');
+  const [lastBacktestConfig, setLastBacktestConfig] = useState<any>(null);
+  const [lastBacktestResults, setLastBacktestResults] = useState<any>(null);
 
   const handleFileUpload = async (file: File, datasetName: string, datasetDescription?: string) => {
     setIsUploading(true);
@@ -56,6 +66,10 @@ function AppContent() {
       setInitialCapital(params.init_cash);
       const result = await apiClient.runBacktest(params);
       setBacktestResult(result);
+      
+      // Guardar configuración y resultados para poder guardar la estrategia
+      setLastBacktestConfig(params);
+      setLastBacktestResults(result);
     } catch (error) {
       console.error('Error running backtest:', error);
       // Aquí podrías mostrar un toast de error
@@ -90,6 +104,75 @@ function AppContent() {
 
   const switchToLogin = () => {
     setShowRegister(false);
+  };
+
+  // Funciones de estrategias
+  const handleSaveStrategy = async (strategyName: string) => {
+    if (!lastBacktestConfig || !lastBacktestResults) {
+      setSaveStrategyError('No hay resultados de backtest para guardar');
+      return;
+    }
+
+    setIsSavingStrategy(true);
+    setSaveStrategyError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/strategies/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          strategy_name: strategyName,
+          strategy_type: lastBacktestConfig.strategy_type,
+          configuration: lastBacktestConfig,
+          results: lastBacktestResults
+        })
+      });
+
+      if (response.ok) {
+        setShowSaveModal(false);
+        // Opcional: mostrar mensaje de éxito
+        alert('Estrategia guardada exitosamente');
+      } else {
+        const errorData = await response.json();
+        setSaveStrategyError(errorData.detail || 'Error guardando estrategia');
+      }
+    } catch (err) {
+      setSaveStrategyError('Error de conexión. Verifica que el backend esté funcionando.');
+    } finally {
+      setIsSavingStrategy(false);
+    }
+  };
+
+  const handleLoadStrategy = async (strategyId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/strategies/${strategyId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const strategy = await response.json();
+        
+        // Cargar la configuración en el formulario
+        // Esto requeriría pasar la configuración al componente ParamsForm
+        // Por ahora, solo cambiamos a la página de backtesting
+        setCurrentPage('backtesting');
+        
+        // Opcional: mostrar mensaje
+        alert(`Estrategia "${strategy.strategy_name}" cargada. Configura los parámetros manualmente.`);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.detail || 'Error cargando estrategia');
+      }
+    } catch (err) {
+      alert('Error de conexión al cargar estrategia');
+    }
   };
 
   // Verificar token al cargar la aplicación
@@ -173,81 +256,151 @@ function AppContent() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Primer tercio - Datasets y Upload */}
-          <div className="space-y-6">
-            <DatasetManager
-              onDatasetSelect={setSelectedDataset}
-              selectedDataset={selectedDataset || undefined}
-            />
-            
-            <DatasetUpdater />
-            
-            <FileUploader
-              onFileUpload={handleFileUpload}
-              isUploading={isUploading}
-              uploadResult={uploadResult || undefined}
-            />
-          </div>
-
-          {/* Segundo y tercer tercio - Parámetros del Backtest */}
-          <div className="lg:col-span-2">
-            <ParamsForm
-              onSubmit={handleBacktest}
-              isRunning={isRunning}
-              selectedDataset={selectedDataset || undefined}
-            />
-          </div>
-        </div>
-
-        {/* Sección inferior - KPIs y Gráfico de Equity */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* KPIs - 1 tercio */}
-          <div>
-            <KpiCards results={backtestResult?.results} initialCapital={initialCapital} />
-          </div>
-          
-          {/* Gráfico de Equity - 2 tercios */}
-          <div className="lg:col-span-2">
-            <EquityChart equity={backtestResult?.equity} />
+        {/* Pestañas de navegación */}
+        <div className="mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setCurrentPage('backtesting')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  currentPage === 'backtesting'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Backtesting
+              </button>
+              <button
+                onClick={() => setCurrentPage('strategies')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  currentPage === 'strategies'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Estrategias
+              </button>
+            </nav>
           </div>
         </div>
 
-        {/* Tabla de Operaciones - Ancho completo */}
-        <div className="mt-8">
-          <TradesTable trades={backtestResult?.trades || []} />
-        </div>
+        {/* Contenido de las pestañas */}
+        {currentPage === 'backtesting' ? (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Primer tercio - Datasets y Upload */}
+              <div className="space-y-6">
+                <DatasetManager
+                  onDatasetSelect={setSelectedDataset}
+                  selectedDataset={selectedDataset || undefined}
+                />
+                
+                <DatasetUpdater />
+                
+                <FileUploader
+                  onFileUpload={handleFileUpload}
+                  isUploading={isUploading}
+                  uploadResult={uploadResult || undefined}
+                />
+              </div>
 
-        {/* Coste de Funding - Ancho completo */}
-        {backtestResult?.trades && backtestResult.trades.length > 0 && (
-          <div className="mt-8">
-            <FundingCost 
-              trades={backtestResult.trades} 
-              fundingRateAnnual={11.6} 
-            />
-          </div>
+              {/* Segundo y tercer tercio - Parámetros del Backtest */}
+              <div className="lg:col-span-2">
+                <ParamsForm
+                  onSubmit={handleBacktest}
+                  isRunning={isRunning}
+                  selectedDataset={selectedDataset || undefined}
+                />
+              </div>
+            </div>
+
+            {/* Sección inferior - KPIs y Gráfico de Equity */}
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* KPIs - 1 tercio */}
+              <div>
+                <KpiCards results={backtestResult?.results} initialCapital={initialCapital} />
+              </div>
+              
+              {/* Gráfico de Equity - 2 tercios */}
+              <div className="lg:col-span-2">
+                <EquityChart equity={backtestResult?.equity} />
+              </div>
+            </div>
+
+            {/* Tabla de Operaciones - Ancho completo */}
+            <div className="mt-8">
+              <TradesTable trades={backtestResult?.trades || []} />
+            </div>
+
+            {/* Coste de Funding - Ancho completo */}
+            {backtestResult?.trades && backtestResult.trades.length > 0 && (
+              <div className="mt-8">
+                <FundingCost 
+                  trades={backtestResult.trades} 
+                  fundingRateAnnual={11.6} 
+                />
+              </div>
+            )}
+
+            {/* Sección de Guardar Estrategia */}
+            {backtestResult?.trades && backtestResult.trades.length > 0 && (
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      ¿Te gusta esta estrategia?
+                    </h3>
+                    <p className="text-gray-600">
+                      Guarda esta configuración para reutilizarla o compartirla con otros usuarios.
+                    </p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => setShowSaveModal(true)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Guardar Estrategia
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage('strategies')}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    >
+                      Ver Todas las Estrategias
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Información adicional */}
+            {uploadResult?.ok && (
+              <div className="mt-8 p-4 bg-muted rounded-lg">
+                <h3 className="font-medium mb-2">Información del archivo</h3>
+                <p className="text-sm text-muted-foreground">
+                  Filas procesadas: {uploadResult.rows} | 
+                  Frecuencia detectada: {uploadResult.freq_detected === '1D' ? 'Diaria' : 'Horaria'}
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <StrategiesPage 
+            onLoadStrategy={handleLoadStrategy}
+            currentUserId={currentUser?.id || 0}
+          />
         )}
 
-        {/* Análisis Pyfolio - Ancho completo (OCULTO TEMPORALMENTE) */}
-        {/* {backtestResult?.trades && backtestResult.trades.length > 0 && (
-          <div className="mt-8">
-            <PyfolioAnalysis 
-              trades={backtestResult.trades} 
-              initialCash={initialCapital || 10000} 
-            />
-          </div>
-        )} */}
-
-        {/* Información adicional */}
-        {uploadResult?.ok && (
-          <div className="mt-8 p-4 bg-muted rounded-lg">
-            <h3 className="font-medium mb-2">Información del archivo</h3>
-            <p className="text-sm text-muted-foreground">
-              Filas procesadas: {uploadResult.rows} | 
-              Frecuencia detectada: {uploadResult.freq_detected === '1D' ? 'Diaria' : 'Horaria'}
-            </p>
-          </div>
-        )}
+        {/* Modal de Guardar Estrategia */}
+        <SaveStrategyModal
+          isOpen={showSaveModal}
+          onClose={() => setShowSaveModal(false)}
+          onSave={handleSaveStrategy}
+          isLoading={isSavingStrategy}
+          error={saveStrategyError}
+          strategyType={lastBacktestConfig?.strategy_type || ''}
+          configuration={lastBacktestConfig}
+          results={lastBacktestResults}
+        />
       </div>
     </div>
   );

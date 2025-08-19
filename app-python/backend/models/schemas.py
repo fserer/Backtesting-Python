@@ -155,3 +155,36 @@ class BacktestResponse(BaseModel):
     equity: List[EquityPoint]
     trades: List[Trade]
     freq: str
+
+# Esquemas para estrategias guardadas
+class SaveStrategyRequest(BaseModel):
+    strategy_name: str = Field(..., min_length=1, max_length=255)
+    strategy_type: str = Field(..., min_length=1, max_length=50)
+    configuration: Dict[str, Any]
+    results: Dict[str, Any]
+
+class StrategySummary(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    strategy_name: str
+    strategy_type: str
+    created_at: str
+    num_trades: int
+    total_pnl: float
+    total_costs: float
+    net_pnl: float
+
+class StrategyDetail(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    strategy_name: str
+    strategy_type: str
+    configuration: Dict[str, Any]
+    results: Dict[str, Any]
+    created_at: str
+
+class StrategiesResponse(BaseModel):
+    strategies: List[StrategySummary]
+    total_count: int
