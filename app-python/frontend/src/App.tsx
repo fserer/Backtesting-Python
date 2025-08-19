@@ -14,7 +14,7 @@ import Register from './components/Register';
 import SaveStrategyModal from './components/SaveStrategyModal';
 import StrategiesPage from './components/StrategiesPage';
 import Footer from './components/Footer';
-import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
+import { apiClient, UploadResponse, BacktestResponse, Dataset } from '@/lib/api';
 
 const queryClient = new QueryClient();
 
