@@ -126,125 +126,61 @@ export default function HyperliquidPage() {
     setError(null);
     
     try {
-      // Por ahora usamos datos mock, pero aquí se conectaría con la API de Hyperliquid
-      setTimeout(() => {
-        // Mock positions
-        setPositions([
-          {
-            coin: 'ETH',
-            size: 0.01,
-            entryPx: 3972.3,
-            unrealizedPnl: 25.4,
-            liquidationPx: 3500.0,
-            side: 'long'
-          }
-        ]);
-
-        // Mock balances
-        setBalances([
-          {
-            coin: 'USDC',
-            free: 94.167947,
-            total: 94.167947,
-            usdValue: 94.17
-          }
-        ]);
-
-        // Mock open orders
-        setOpenOrders([
-          {
-            id: '1',
-            coin: 'ETH',
-            side: 'sell',
-            size: 0.01,
-            price: 4225.4,
-            orderType: 'LIMIT',
-            status: 'pending',
-            timestamp: Date.now(),
-            date: '19/8/2025',
-            time: '21:25:55'
-          }
-        ]);
-
-        // Mock trades
-        setTrades([
-          {
-            id: '1',
-            coin: 'ETH',
-            side: 'sell',
-            size: 0.01,
-            price: 3972.3,
-            volume: 39.72,
-            fee: 0.017875,
-            feePercentage: 0.0450,
-            orderType: 'taker',
-            timestamp: Date.now(),
-            date: '8/8/2025',
-            time: '16:13:34'
-          },
-          {
-            id: '2',
-            coin: 'ETH',
-            side: 'buy',
-            size: 0.01,
-            price: 3985.0,
-            volume: 39.85,
-            fee: 0.005977,
-            feePercentage: 0.0150,
-            orderType: 'maker',
-            timestamp: Date.now(),
-            date: '8/8/2025',
-            time: '16:11:53'
-          },
-          {
-            id: '3',
-            coin: 'ETH',
-            side: 'buy',
-            size: 0.01,
-            price: 3909.8,
-            volume: 39.10,
-            fee: 0.017594,
-            feePercentage: 0.0450,
-            orderType: 'taker',
-            timestamp: Date.now(),
-            date: '8/8/2025',
-            time: '13:11:51'
-          },
-          {
-            id: '4',
-            coin: 'ETH',
-            side: 'sell',
-            size: 0.01,
-            price: 3908.9,
-            volume: 39.09,
-            fee: 0.01759,
-            feePercentage: 0.0450,
-            orderType: 'taker',
-            timestamp: Date.now(),
-            date: '8/8/2025',
-            time: '13:11:35'
-          },
-          {
-            id: '5',
-            coin: 'ETH',
-            side: 'sell',
-            size: 0.01,
-            price: 3891.9,
-            volume: 38.92,
-            fee: 0.017513,
-            feePercentage: 0.0450,
-            orderType: 'taker',
-            timestamp: Date.now(),
-            date: '8/8/2025',
-            time: '12:50:37'
-          }
-        ]);
-
-        setLoading(false);
-      }, 1000);
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      // Cargar posiciones
+      const positionsResponse = await fetch(`${baseUrl}/api/hyperliquid/positions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (positionsResponse.ok) {
+        const positionsData = await positionsResponse.json();
+        setPositions(positionsData.positions || []);
+      }
+      
+      // Cargar balances
+      const balancesResponse = await fetch(`${baseUrl}/api/hyperliquid/balances`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (balancesResponse.ok) {
+        const balancesData = await balancesResponse.json();
+        setBalances(balancesData.balances || []);
+      }
+      
+      // Cargar órdenes abiertas
+      const ordersResponse = await fetch(`${baseUrl}/api/hyperliquid/orders`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (ordersResponse.ok) {
+        const ordersData = await ordersResponse.json();
+        setOpenOrders(ordersData.orders || []);
+      }
+      
+      // Cargar historial de trades
+      const tradesResponse = await fetch(`${baseUrl}/api/hyperliquid/trades?limit=20`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (tradesResponse.ok) {
+        const tradesData = await tradesResponse.json();
+        setTrades(tradesData.trades || []);
+      }
+      
     } catch (error) {
       console.error('Error cargando datos de Hyperliquid:', error);
       setError('Error cargando datos de Hyperliquid');
+    } finally {
       setLoading(false);
     }
   };

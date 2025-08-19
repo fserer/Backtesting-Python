@@ -20,6 +20,7 @@ from services.pyfolio_service import PyfolioService
 from services.auth_service import AuthService
 from services.strategies_service import StrategiesService
 from services.hyperliquid_service import HyperliquidService
+from services.hyperliquid_trading_service import hyperliquid_trading_service
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
     CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest,
@@ -664,6 +665,191 @@ async def get_all_hyperliquid_settings(
         raise
     except Exception as e:
         logger.error(f"Error obteniendo todas las configuraciones de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+# Endpoints de Trading de Hyperliquid
+@app.get("/api/hyperliquid/positions")
+async def get_hyperliquid_positions(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene las posiciones abiertas del usuario en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        # Conectar con Hyperliquid
+        if not hyperliquid_trading_service.connect(settings["api_wallet_address"], settings["api_private_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Obtener posiciones
+        positions = hyperliquid_trading_service.get_positions(settings["api_wallet_address"])
+        
+        return {"positions": positions}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo posiciones de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/hyperliquid/balances")
+async def get_hyperliquid_balances(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene los balances del usuario en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        # Conectar con Hyperliquid
+        if not hyperliquid_trading_service.connect(settings["api_wallet_address"], settings["api_private_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Obtener balances
+        balances = hyperliquid_trading_service.get_balances(settings["api_wallet_address"])
+        
+        return {"balances": balances}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo balances de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/hyperliquid/orders")
+async def get_hyperliquid_orders(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene las órdenes abiertas del usuario en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        # Conectar con Hyperliquid
+        if not hyperliquid_trading_service.connect(settings["api_wallet_address"], settings["api_private_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Obtener órdenes
+        orders = hyperliquid_trading_service.get_open_orders(settings["api_wallet_address"])
+        
+        return {"orders": orders}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo órdenes de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/hyperliquid/trades")
+async def get_hyperliquid_trades(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    limit: int = 20
+):
+    """
+    Obtiene el historial de trades del usuario en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        # Conectar con Hyperliquid
+        if not hyperliquid_trading_service.connect(settings["api_wallet_address"], settings["api_private_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Obtener trades
+        trades = hyperliquid_trading_service.get_trade_history(settings["api_wallet_address"], limit)
+        
+        return {"trades": trades}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo trades de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.post("/api/hyperliquid/order")
+async def place_hyperliquid_order(
+    order_data: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Coloca una orden en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        # Conectar con Hyperliquid
+        if not hyperliquid_trading_service.connect(settings["api_wallet_address"], settings["api_private_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Colocar orden
+        result = hyperliquid_trading_service.place_order(
+            coin=order_data["coin"],
+            side=order_data["side"],
+            size=float(order_data["size"]),
+            order_type=order_data.get("orderType", "MARKET"),
+            limit_price=float(order_data.get("limitPrice", 0))
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error colocando orden en Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.delete("/api/hyperliquid/order/{order_id}")
+async def cancel_hyperliquid_order(
+    order_id: str,
+    coin: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Cancela una orden en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        # Conectar con Hyperliquid
+        if not hyperliquid_trading_service.connect(settings["api_wallet_address"], settings["api_private_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Cancelar orden
+        result = hyperliquid_trading_service.cancel_order(coin, order_id)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cancelando orden en Hyperliquid: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 if __name__ == "__main__":
