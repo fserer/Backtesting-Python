@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class HyperliquidService:
     def __init__(self, db_path: str = "app/data/backtesting.db"):
         self.db_path = db_path
-        self._init_hyperliquid_table()
+        # No inicializar la tabla en el constructor para evitar errores al importar
     
     def _init_hyperliquid_table(self):
         """Inicializa la tabla de configuraciones de Hyperliquid"""
@@ -40,15 +40,15 @@ class HyperliquidService:
             
         except Exception as e:
             logger.error(f"Error inicializando tabla hyperliquid_settings: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error interno del servidor"
-            )
+            # No lanzar excepción, solo loggear el error
     
     def save_hyperliquid_settings(self, user_id: int, username: str, api_wallet_name: str, 
                                  api_wallet_address: str, api_private_key: str) -> Dict[str, Any]:
         """Guarda o actualiza la configuración de Hyperliquid de un usuario"""
         try:
+            # Inicializar tabla si no existe
+            self._init_hyperliquid_table()
+            
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
@@ -104,6 +104,9 @@ class HyperliquidService:
     def get_hyperliquid_settings(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Obtiene la configuración de Hyperliquid de un usuario"""
         try:
+            # Inicializar tabla si no existe
+            self._init_hyperliquid_table()
+            
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
@@ -142,6 +145,9 @@ class HyperliquidService:
     def delete_hyperliquid_settings(self, user_id: int) -> bool:
         """Elimina la configuración de Hyperliquid de un usuario (soft delete)"""
         try:
+            # Inicializar tabla si no existe
+            self._init_hyperliquid_table()
+            
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
@@ -172,6 +178,9 @@ class HyperliquidService:
     def get_all_hyperliquid_settings(self) -> List[Dict[str, Any]]:
         """Obtiene todas las configuraciones activas de Hyperliquid (para administración)"""
         try:
+            # Inicializar tabla si no existe
+            self._init_hyperliquid_table()
+            
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
