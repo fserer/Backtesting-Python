@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, validator
-from typing import Dict, List, Optional, Literal
+from pydantic import BaseModel, Field, validator, EmailStr
+from typing import Dict, List, Optional, Literal, Any
 from datetime import datetime
 
 class TransformConfig(BaseModel):
@@ -97,6 +97,36 @@ class UploadResponse(BaseModel):
 class EquityPoint(BaseModel):
     timestamp: str
     equity: float
+
+# Esquemas de autenticación
+class UserLogin(BaseModel):
+    username: str = Field(..., min_length=1, max_length=100)
+    password: str = Field(..., min_length=1)
+
+class UserRegister(BaseModel):
+    username: str = Field(..., min_length=1, max_length=100)
+    email: Optional[str] = None
+    password: str = Field(..., min_length=1)
+    confirm_password: str = Field(..., min_length=1)
+    
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Las contraseñas no coinciden')
+        return v
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: Dict[str, Any]
+
+class User(BaseModel):
+    id: int
+    username: str
+    email: Optional[str] = None
+    created_at: str
+    last_login: Optional[str] = None
+    is_active: bool
 
 class PyfolioRequest(BaseModel):
     trades: List[Dict]

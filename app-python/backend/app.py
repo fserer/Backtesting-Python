@@ -1,6 +1,7 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import pandas as pd
 import numpy as np
 from typing import Optional, List, Dict, Any
@@ -16,14 +17,20 @@ from services.csv_ingest import process_csv_upload
 from services.transform import apply_transformations
 from services.backtest import run_backtest, run_multi_dataset_backtest
 from services.pyfolio_service import PyfolioService
+from services.auth_service import AuthService
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
-    CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest
+    CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest,
+    UserLogin, UserRegister, Token, User
 )
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Configuración de autenticación
+security = HTTPBearer()
+auth_service = AuthService()
 
 app = FastAPI(
     title="Backtesting API",
@@ -335,6 +342,104 @@ async def generate_pyfolio_analysis(request: PyfolioRequest):
     except Exception as e:
         logger.error(f"Error generando análisis de Pyfolio: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================================================
+# ENDPOINTS DE AUTENTICACIÓN
+# ============================================================================
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict[str, Any]:
+    """Obtiene el usuario actual basado en el token JWT"""
+    token = credentials.credentials
+    user = auth_service.verify_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o expirado",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+@app.post("/api/auth/register", response_model=Dict[str, Any])
+async def register_user(user_data: UserRegister):
+    """
+    Registra un nuevo usuario.
+    """
+    try:
+        user = auth_service.create_user(
+            username=user_data.username,
+            password=user_data.password,
+            email=user_data.email
+        )
+        
+        # Crear token de acceso
+        access_token = auth_service.create_access_token(data={"sub": user["username"]})
+        
+        return {
+            "message": "Usuario registrado exitosamente",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error registrando usuario: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.post("/api/auth/login", response_model=Token)
+async def login_user(user_data: UserLogin):
+    """
+    Autentica un usuario y devuelve un token JWT.
+    """
+    try:
+        user = auth_service.authenticate_user(user_data.username, user_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciales incorrectas",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # Crear token de acceso
+        access_token = auth_service.create_access_token(data={"sub": user["username"]})
+        
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            user=user
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en login: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/auth/me", response_model=User)
+async def get_current_user_info(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Obtiene información del usuario actual.
+    """
+    try:
+        user = auth_service.get_user_by_id(current_user["id"])
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        return User(**user)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo información del usuario: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/auth/verify")
+async def verify_token(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Verifica si el token es válido.
+    """
+    return {"valid": True, "user": current_user}
 
 if __name__ == "__main__":
     import uvicorn

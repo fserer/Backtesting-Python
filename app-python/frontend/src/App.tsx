@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FileUploader } from './components/FileUploader';
 import { DatasetManager } from './components/DatasetManager';
@@ -9,6 +9,8 @@ import { TradesTable } from './components/TradesTable';
 import { FundingCost } from './components/FundingCost';
 import PyfolioAnalysis from './components/PyfolioAnalysis';
 import DatasetUpdater from './components/DatasetUpdater';
+import Login from './components/Login';
+import Register from './components/Register';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -20,6 +22,12 @@ function AppContent() {
   const [initialCapital, setInitialCapital] = useState<number | undefined>(undefined);
   const [isUploading, setIsUploading] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  
+  // Estados de autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showRegister, setShowRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleFileUpload = async (file: File, datasetName: string, datasetDescription?: string) => {
     setIsUploading(true);
@@ -56,14 +64,113 @@ function AppContent() {
     }
   };
 
+  // Funciones de autenticación
+  const handleLogin = (token: string, user: any) => {
+    setIsAuthenticated(true);
+    setCurrentUser(user);
+    setShowRegister(false);
+  };
+
+  const handleRegister = (token: string, user: any) => {
+    setIsAuthenticated(true);
+    setCurrentUser(user);
+    setShowRegister(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+  };
+
+  const switchToRegister = () => {
+    setShowRegister(true);
+  };
+
+  const switchToLogin = () => {
+    setShowRegister(false);
+  };
+
+  // Verificar token al cargar la aplicación
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+
+      if (token && user) {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/verify`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            setIsAuthenticated(true);
+            setCurrentUser(JSON.parse(user));
+          } else {
+            // Token inválido, limpiar localStorage
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+          }
+        } catch (error) {
+          console.error('Error verificando token:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar login/register si no está autenticado
+  if (!isAuthenticated) {
+    return showRegister ? (
+      <Register onRegister={handleRegister} onSwitchToLogin={switchToLogin} />
+    ) : (
+      <Login onLogin={handleLogin} onSwitchToRegister={switchToRegister} />
+    );
+  }
+
+  // Mostrar dashboard si está autenticado
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Backtesting App</h1>
-          <p className="text-muted-foreground mt-2">
-            Sube tu CSV y ejecuta backtests con vectorbt
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Backtesting App</h1>
+              <p className="text-muted-foreground mt-2">
+                Sube tu CSV y ejecuta backtests con vectorbt
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                Bienvenido, {currentUser?.username}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
