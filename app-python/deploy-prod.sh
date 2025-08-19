@@ -53,3 +53,4 @@ echo "📋 Comandos útiles:"
 echo "  Ver logs: docker-compose -f docker-compose.prod.yml logs -f"
 echo "  Ver estado: docker-compose -f docker-compose.prod.yml ps"
 echo "  Parar servicios: docker-compose -f docker-compose.prod.yml down"
+
