@@ -10,7 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Excluir solo lib/ de Python, no del frontend
+backend/lib/
 lib64/
 parts/
 sdist/
