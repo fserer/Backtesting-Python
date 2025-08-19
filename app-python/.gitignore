@@ -1,26 +1,13 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-# Excluir solo lib/ de Python, no del frontend
-backend/lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# Python backend
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/build/
+backend/dist/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
 
 # Virtual environments
 venv/
@@ -36,18 +23,18 @@ venv.bak/
 .env.test.local
 .env.production.local
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# Node.js dependencies (solo en frontend)
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
 
-# Build outputs
-dist/
-build/
-.next/
-out/
+# Build outputs (solo en frontend)
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/out/
 
 # IDE
 .vscode/
@@ -82,9 +69,6 @@ coverage/
 # nyc test coverage
 .nyc_output
 
-# Dependency directories
-jspm_packages/
-
 # Optional npm cache directory
 .npm
 
@@ -115,7 +99,6 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
-dist
 
 # Gatsby files
 .cache/
