@@ -339,7 +339,6 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                           </TableCell>
                         </TableRow>
                       )}
-                      </TableRow>
                     ))}
                   </TableBody>
                 </Table>
