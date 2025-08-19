@@ -237,107 +237,109 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                   </TableHeader>
                   <TableBody>
                     {strategies.map((strategy) => (
-                      <TableRow key={strategy.id}>
-                        <TableCell className="font-mono text-sm">
-                          {formatDate(strategy.created_at)}
-                        </TableCell>
-                        <TableCell>
-                          <span className="font-medium">{strategy.username}</span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs truncate" title={strategy.strategy_name}>
-                            {strategy.strategy_name}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {strategy.formatted_config.strategy_description}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {strategy.num_trades}
-                        </TableCell>
-                        <TableCell className={`text-right font-mono ${strategy.total_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(strategy.total_pnl)}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-orange-600">
-                          {formatCurrency(strategy.total_costs)}
-                        </TableCell>
-                        <TableCell className={`text-right font-mono font-semibold ${strategy.net_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(strategy.net_pnl)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setExpandedStrategy(expandedStrategy === strategy.id ? null : strategy.id)}
-                              title="Ver configuración"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            {strategy.user_id === currentUserId && (
+                      <React.Fragment key={strategy.id}>
+                        <TableRow>
+                          <TableCell className="font-mono text-sm">
+                            {formatDate(strategy.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-medium">{strategy.username}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="max-w-xs truncate" title={strategy.strategy_name}>
+                              {strategy.strategy_name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {strategy.formatted_config.strategy_description}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {strategy.num_trades}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono ${strategy.total_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(strategy.total_pnl)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-orange-600">
+                            {formatCurrency(strategy.total_costs)}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono font-semibold ${strategy.net_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(strategy.net_pnl)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end space-x-2">
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => deleteStrategy(strategy.id)}
-                                disabled={deletingStrategy === strategy.id}
-                                title="Eliminar estrategia"
-                                className="text-red-600 hover:text-red-700"
+                                onClick={() => setExpandedStrategy(expandedStrategy === strategy.id ? null : strategy.id)}
+                                title="Ver configuración"
                               >
-                                {deletingStrategy === strategy.id ? (
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-                                ) : (
-                                  <Trash2 className="h-3 w-3" />
-                                )}
+                                <Eye className="h-3 w-3" />
                               </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                      {expandedStrategy === strategy.id && (
-                        <TableRow>
-                          <TableCell colSpan={9} className="bg-gray-50 p-4">
-                            <div className="space-y-4">
-                              <h4 className="font-semibold text-gray-900">Configuración Detallada</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <p><strong>Dataset:</strong> {strategy.formatted_config.dataset_name}</p>
-                                  <p><strong>Período:</strong> {strategy.formatted_config.period}</p>
-                                  <p><strong>Comisiones:</strong> {strategy.formatted_config.fees_percentage}</p>
-                                  <p><strong>Capital inicial:</strong> {strategy.formatted_config.init_cash_formatted}</p>
-                                  <p><strong>Aplicar a:</strong> {strategy.formatted_config.apply_to === 'v' ? 'Indicador' : 'Precio'}</p>
-                                </div>
-                                <div>
-                                  {strategy.formatted_config.transformations.length > 0 && (
-                                    <div>
-                                      <p><strong>Transformaciones:</strong></p>
-                                      <ul className="list-disc list-inside ml-2">
-                                        {strategy.formatted_config.transformations.map((transform, index) => (
-                                          <li key={index}>{transform}</li>
-                                        ))}
-                                      </ul>
-                                    </div>
+                              {strategy.user_id === currentUserId && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => deleteStrategy(strategy.id)}
+                                  disabled={deletingStrategy === strategy.id}
+                                  title="Eliminar estrategia"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  {deletingStrategy === strategy.id ? (
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
                                   )}
-                                  {strategy.formatted_config.thresholds && (
-                                    <div>
-                                      <p><strong>Umbrales:</strong></p>
-                                      <p className="ml-2">Entrada: {strategy.formatted_config.thresholds.entry}</p>
-                                      <p className="ml-2">Salida: {strategy.formatted_config.thresholds.exit}</p>
-                                    </div>
-                                  )}
-                                  {strategy.formatted_config.crossover_details && (
-                                    <div>
-                                      <p><strong>Detalles de cruce:</strong></p>
-                                      <p className="ml-2">{strategy.formatted_config.crossover_details}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
-                      )}
+                        {expandedStrategy === strategy.id && (
+                          <TableRow>
+                            <TableCell colSpan={9} className="bg-gray-50 p-4">
+                              <div className="space-y-4">
+                                <h4 className="font-semibold text-gray-900">Configuración Detallada</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p><strong>Dataset:</strong> {strategy.formatted_config.dataset_name}</p>
+                                    <p><strong>Período:</strong> {strategy.formatted_config.period}</p>
+                                    <p><strong>Comisiones:</strong> {strategy.formatted_config.fees_percentage}</p>
+                                    <p><strong>Capital inicial:</strong> {strategy.formatted_config.init_cash_formatted}</p>
+                                    <p><strong>Aplicar a:</strong> {strategy.formatted_config.apply_to === 'v' ? 'Indicador' : 'Precio'}</p>
+                                  </div>
+                                  <div>
+                                    {strategy.formatted_config.transformations.length > 0 && (
+                                      <div>
+                                        <p><strong>Transformaciones:</strong></p>
+                                        <ul className="list-disc list-inside ml-2">
+                                          {strategy.formatted_config.transformations.map((transform, index) => (
+                                            <li key={index}>{transform}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {strategy.formatted_config.thresholds && (
+                                      <div>
+                                        <p><strong>Umbrales:</strong></p>
+                                        <p className="ml-2">Entrada: {strategy.formatted_config.thresholds.entry}</p>
+                                        <p className="ml-2">Salida: {strategy.formatted_config.thresholds.exit}</p>
+                                      </div>
+                                    )}
+                                    {strategy.formatted_config.crossover_details && (
+                                      <div>
+                                        <p><strong>Detalles de cruce:</strong></p>
+                                        <p className="ml-2">{strategy.formatted_config.crossover_details}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     ))}
                   </TableBody>
                 </Table>
