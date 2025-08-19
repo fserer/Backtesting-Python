@@ -295,7 +295,6 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                           </div>
                         </TableCell>
                       </TableRow>
-                      {/* Fila expandida con configuración detallada */}
                       {expandedStrategy === strategy.id && (
                         <TableRow>
                           <TableCell colSpan={9} className="bg-gray-50 p-4">
