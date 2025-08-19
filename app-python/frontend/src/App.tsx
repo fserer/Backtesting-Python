@@ -108,7 +108,7 @@ function AppContent() {
   };
 
   // Funciones de estrategias
-  const handleSaveStrategy = async (strategyName: string) => {
+  const handleSaveStrategy = async (comments: string) => {
     if (!lastBacktestConfig || !lastBacktestResults) {
       setSaveStrategyError('No hay resultados de backtest para guardar');
       return;
@@ -126,10 +126,10 @@ function AppContent() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          strategy_name: strategyName,
           strategy_type: lastBacktestConfig.strategy_type,
           configuration: lastBacktestConfig,
-          results: lastBacktestResults
+          results: lastBacktestResults,
+          comments: comments || null
         })
       });
 

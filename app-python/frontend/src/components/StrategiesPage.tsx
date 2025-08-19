@@ -11,13 +11,13 @@ interface Strategy {
   id: number;
   user_id: number;
   username: string;
-  strategy_name: string;
   strategy_type: string;
   created_at: string;
   num_trades: number;
   total_pnl: number;
   total_costs: number;
   net_pnl: number;
+  comments?: string;
   formatted_config: {
     dataset_name: string;
     strategy_description: string;
@@ -226,7 +226,7 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                     <TableRow>
                       <TableHead>Fecha</TableHead>
                       <TableHead>Usuario</TableHead>
-                      <TableHead>Estrategia</TableHead>
+                      <TableHead>Comentarios</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Operaciones</TableHead>
                       <TableHead className="text-right">P&L</TableHead>
@@ -246,8 +246,8 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                             <span className="font-medium">{strategy.username}</span>
                           </TableCell>
                           <TableCell>
-                            <div className="max-w-xs truncate" title={strategy.strategy_name}>
-                              {strategy.strategy_name}
+                            <div className="max-w-xs truncate" title={strategy.comments || 'Sin comentarios'}>
+                              {strategy.comments || 'Sin comentarios'}
                             </div>
                           </TableCell>
                           <TableCell>

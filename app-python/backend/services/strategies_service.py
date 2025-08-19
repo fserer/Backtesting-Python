@@ -27,14 +27,30 @@ class StrategiesService:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     username TEXT NOT NULL,
-                    strategy_name TEXT NOT NULL,
                     strategy_type TEXT NOT NULL,
                     configuration TEXT NOT NULL,
                     results TEXT NOT NULL,
+                    comments TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (id)
                 )
             """)
+            
+            # Añadir columna comments si no existe (para compatibilidad con tablas existentes)
+            try:
+                cursor.execute("ALTER TABLE strategies ADD COLUMN comments TEXT")
+                logger.info("Columna comments añadida a la tabla strategies")
+            except sqlite3.OperationalError:
+                # La columna ya existe
+                pass
+            
+            # Eliminar columna strategy_name si existe (para compatibilidad con tablas existentes)
+            try:
+                cursor.execute("ALTER TABLE strategies DROP COLUMN strategy_name")
+                logger.info("Columna strategy_name eliminada de la tabla strategies")
+            except sqlite3.OperationalError:
+                # La columna no existe o no se puede eliminar
+                pass
             
             conn.commit()
             conn.close()
@@ -44,9 +60,9 @@ class StrategiesService:
             logger.error(f"Error inicializando tabla de estrategias: {e}")
             raise
     
-    def save_strategy(self, user_id: int, username: str, strategy_name: str, 
-                     strategy_type: str, configuration: Dict[str, Any], 
-                     results: Dict[str, Any]) -> Dict[str, Any]:
+    def save_strategy(self, user_id: int, username: str, strategy_type: str, 
+                     configuration: Dict[str, Any], results: Dict[str, Any], 
+                     comments: Optional[str] = None) -> Dict[str, Any]:
         """Guarda una nueva estrategia"""
         try:
             conn = sqlite3.connect(self.db_path)
@@ -57,21 +73,21 @@ class StrategiesService:
             results_json = json.dumps(results, ensure_ascii=False)
             
             cursor.execute("""
-                INSERT INTO strategies (user_id, username, strategy_name, strategy_type, configuration, results)
+                INSERT INTO strategies (user_id, username, strategy_type, configuration, results, comments)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (user_id, username, strategy_name, strategy_type, config_json, results_json))
+            """, (user_id, username, strategy_type, config_json, results_json, comments))
             
             strategy_id = cursor.lastrowid
             conn.commit()
             conn.close()
             
-            logger.info(f"Estrategia guardada exitosamente: {strategy_name} por {username}")
+            logger.info(f"Estrategia guardada exitosamente por {username}")
             return {
                 "id": strategy_id,
                 "user_id": user_id,
                 "username": username,
-                "strategy_name": strategy_name,
                 "strategy_type": strategy_type,
+                "comments": comments,
                 "created_at": datetime.now().isoformat()
             }
             
@@ -89,16 +105,16 @@ class StrategiesService:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, user_id, username, strategy_name, strategy_type, 
-                       configuration, results, created_at
+                SELECT id, user_id, username, strategy_type, 
+                       configuration, results, comments, created_at
                 FROM strategies 
                 ORDER BY created_at DESC
             """)
             
             strategies = []
             for row in cursor.fetchall():
-                strategy_id, user_id, username, strategy_name, strategy_type, \
-                config_json, results_json, created_at = row
+                strategy_id, user_id, username, strategy_type, \
+                config_json, results_json, comments, created_at = row
                 
                 # Parsear JSON
                 try:
@@ -130,11 +146,11 @@ class StrategiesService:
                     "id": strategy_id,
                     "user_id": user_id,
                     "username": username,
-                    "strategy_name": strategy_name,
                     "strategy_type": strategy_type,
                     "configuration": configuration,
                     "results": results,
                     "created_at": created_at,
+                    "comments": comments,
                     "num_trades": num_trades,
                     "total_pnl": total_pnl,
                     "total_costs": total_costs,
@@ -159,8 +175,8 @@ class StrategiesService:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, user_id, username, strategy_name, strategy_type, 
-                       configuration, results, created_at
+                SELECT id, user_id, username, strategy_type, 
+                       configuration, results, comments, created_at
                 FROM strategies 
                 WHERE id = ?
             """, (strategy_id,))
@@ -171,8 +187,8 @@ class StrategiesService:
             if not row:
                 return None
             
-            strategy_id, user_id, username, strategy_name, strategy_type, \
-            config_json, results_json, created_at = row
+            strategy_id, user_id, username, strategy_type, \
+            config_json, results_json, comments, created_at = row
             
             # Parsear JSON
             try:
@@ -189,11 +205,11 @@ class StrategiesService:
                 "id": strategy_id,
                 "user_id": user_id,
                 "username": username,
-                "strategy_name": strategy_name,
                 "strategy_type": strategy_type,
                 "configuration": configuration,
                 "results": results,
                 "created_at": created_at,
+                "comments": comments,
                 "formatted_config": formatted_config
             }
             
@@ -208,8 +224,8 @@ class StrategiesService:
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, user_id, username, strategy_name, strategy_type, 
-                       configuration, results, created_at
+                SELECT id, user_id, username, strategy_type, 
+                       configuration, results, comments, created_at
                 FROM strategies 
                 WHERE user_id = ?
                 ORDER BY created_at DESC
@@ -217,8 +233,8 @@ class StrategiesService:
             
             strategies = []
             for row in cursor.fetchall():
-                strategy_id, user_id, username, strategy_name, strategy_type, \
-                config_json, results_json, created_at = row
+                strategy_id, user_id, username, strategy_type, \
+                config_json, results_json, comments, created_at = row
                 
                 # Parsear JSON
                 try:
@@ -232,11 +248,11 @@ class StrategiesService:
                     "id": strategy_id,
                     "user_id": user_id,
                     "username": username,
-                    "strategy_name": strategy_name,
                     "strategy_type": strategy_type,
                     "configuration": configuration,
                     "results": results,
-                    "created_at": created_at
+                    "created_at": created_at,
+                    "comments": comments
                 })
             
             conn.close()

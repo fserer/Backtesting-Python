@@ -460,10 +460,10 @@ async def save_strategy(
         strategy = strategies_service.save_strategy(
             user_id=current_user["id"],
             username=current_user["username"],
-            strategy_name=strategy_data.strategy_name,
             strategy_type=strategy_data.strategy_type,
             configuration=strategy_data.configuration,
-            results=strategy_data.results
+            results=strategy_data.results,
+            comments=strategy_data.comments
         )
         
         return {
@@ -492,13 +492,13 @@ async def get_all_strategies(current_user: Dict[str, Any] = Depends(get_current_
                 id=strategy["id"],
                 user_id=strategy["user_id"],
                 username=strategy["username"],
-                strategy_name=strategy["strategy_name"],
                 strategy_type=strategy["strategy_type"],
                 created_at=strategy["created_at"],
                 num_trades=strategy["num_trades"],
                 total_pnl=strategy["total_pnl"],
                 total_costs=strategy["total_costs"],
                 net_pnl=strategy["net_pnl"],
+                comments=strategy["comments"],
                 formatted_config=strategy["formatted_config"]
             ))
         

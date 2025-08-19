@@ -9,7 +9,7 @@ import { X, Save, Info } from 'lucide-react';
 interface SaveStrategyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (strategyName: string) => void;
+  onSave: (comments: string) => void;
   isLoading: boolean;
   error: string;
   strategyType: string;
@@ -27,7 +27,7 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
   configuration,
   results
 }) => {
-  const [strategyName, setStrategyName] = useState('');
+  const [comments, setComments] = useState('');
 
   // Funciones auxiliares para mostrar información descriptiva
   const getStrategyTypeDescription = (type: string, config: any) => {
@@ -48,13 +48,11 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
   };
 
   const handleSave = () => {
-    if (strategyName.trim()) {
-      onSave(strategyName.trim());
-    }
+    onSave(comments.trim());
   };
 
   const handleClose = () => {
-    setStrategyName('');
+    setComments('');
     onClose();
   };
 
@@ -83,19 +81,6 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Nombre de la estrategia */}
-          <div className="space-y-2">
-            <Label htmlFor="strategyName">Nombre de la Estrategia *</Label>
-            <Input
-              id="strategyName"
-              type="text"
-              value={strategyName}
-              onChange={(e) => setStrategyName(e.target.value)}
-              placeholder="Ej: Estrategia SOPR Umbral 0.9"
-              disabled={isLoading}
-            />
-          </div>
-
           {/* Información de lo que se va a guardar */}
           <Alert>
             <Info className="h-4 w-4" />
@@ -136,6 +121,23 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
             </AlertDescription>
           </Alert>
 
+          {/* Comentarios */}
+          <div className="space-y-2">
+            <Label htmlFor="comments">Comentarios (opcional)</Label>
+            <textarea
+              id="comments"
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Escribe notas sobre esta estrategia, observaciones, razones de los parámetros elegidos, etc. (máximo 1000 caracteres)"
+              className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+              disabled={isLoading}
+              maxLength={1000}
+            />
+            <p className="text-xs text-muted-foreground">
+              {comments.length}/1000 caracteres
+            </p>
+          </div>
+
           {/* Error */}
           {error && (
             <Alert variant="destructive">
@@ -154,7 +156,7 @@ const SaveStrategyModal: React.FC<SaveStrategyModalProps> = ({
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isLoading || !strategyName.trim()}
+              disabled={isLoading}
             >
               {isLoading ? (
                 <>

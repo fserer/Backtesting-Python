@@ -158,10 +158,10 @@ class BacktestResponse(BaseModel):
 
 # Esquemas para estrategias guardadas
 class SaveStrategyRequest(BaseModel):
-    strategy_name: str = Field(..., min_length=1, max_length=255)
     strategy_type: str = Field(..., min_length=1, max_length=50)
     configuration: Dict[str, Any]
     results: Dict[str, Any]
+    comments: Optional[str] = Field(None, max_length=1000)
 
 class FormattedConfiguration(BaseModel):
     dataset_name: str
@@ -179,24 +179,24 @@ class StrategySummary(BaseModel):
     id: int
     user_id: int
     username: str
-    strategy_name: str
     strategy_type: str
     created_at: str
     num_trades: int
     total_pnl: float
     total_costs: float
     net_pnl: float
+    comments: Optional[str]
     formatted_config: FormattedConfiguration
 
 class StrategyDetail(BaseModel):
     id: int
     user_id: int
     username: str
-    strategy_name: str
     strategy_type: str
     configuration: Dict[str, Any]
     results: Dict[str, Any]
     created_at: str
+    comments: Optional[str]
     formatted_config: FormattedConfiguration
 
 class StrategiesResponse(BaseModel):
