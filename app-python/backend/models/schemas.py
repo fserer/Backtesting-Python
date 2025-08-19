@@ -162,6 +162,7 @@ class SaveStrategyRequest(BaseModel):
     configuration: Dict[str, Any]
     results: Dict[str, Any]
     comments: Optional[str] = Field(None, max_length=1000)
+    period_description: Optional[str] = Field(None, max_length=100)
 
 class FormattedConfiguration(BaseModel):
     dataset_name: str

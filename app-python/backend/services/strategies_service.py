@@ -62,19 +62,22 @@ class StrategiesService:
     
     def save_strategy(self, user_id: int, username: str, strategy_type: str, 
                      configuration: Dict[str, Any], results: Dict[str, Any], 
-                     comments: Optional[str] = None, dataset_name: Optional[str] = None) -> Dict[str, Any]:
+                     comments: Optional[str] = None, dataset_name: Optional[str] = None, 
+                     period_description: Optional[str] = None) -> Dict[str, Any]:
         """Guarda una nueva estrategia"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Añadir el nombre del dataset a la configuración si se proporciona
-            config_with_dataset_name = configuration.copy()
+            # Añadir el nombre del dataset y descripción del período a la configuración si se proporcionan
+            config_with_metadata = configuration.copy()
             if dataset_name:
-                config_with_dataset_name['dataset_name'] = dataset_name
+                config_with_metadata['dataset_name'] = dataset_name
+            if period_description:
+                config_with_metadata['period_description'] = period_description
             
             # Convertir configuración y resultados a JSON
-            config_json = json.dumps(config_with_dataset_name, ensure_ascii=False)
+            config_json = json.dumps(config_with_metadata, ensure_ascii=False)
             results_json = json.dumps(results, ensure_ascii=False)
             
             cursor.execute("""
@@ -317,6 +320,7 @@ class StrategiesService:
                 )
             },
             "period": configuration.get('period'),
+            "period_description": configuration.get('period_description'),
             "fees": configuration.get('fees'),
             "slippage": configuration.get('slippage'),
             "init_cash": configuration.get('init_cash'),
@@ -355,7 +359,7 @@ class StrategiesService:
         return {
             "dataset_name": detailed_config.get('dataset', {}).get('name'),
             "strategy_description": detailed_config.get('strategy_type', {}).get('description'),
-            "period": detailed_config.get('period'),
+            "period": detailed_config.get('period_description') or detailed_config.get('period'),
             "fees_percentage": f"{detailed_config.get('fees', 0) * 100:.3f}%",
             "init_cash_formatted": f"${detailed_config.get('init_cash', 0):,.0f}",
             "transformations": transform_text,

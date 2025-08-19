@@ -474,7 +474,8 @@ async def save_strategy(
             configuration=strategy_data.configuration,
             results=strategy_data.results,
             comments=strategy_data.comments,
-            dataset_name=dataset_name
+            dataset_name=dataset_name,
+            period_description=strategy_data.period_description
         )
         
         return {
