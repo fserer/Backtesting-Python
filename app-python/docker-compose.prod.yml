@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: backtesting-frontend-prod
     ports:
-      - "3000:3000"
+      - "3000:5173"
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
     depends_on:
