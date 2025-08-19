@@ -19,11 +19,13 @@ from services.backtest import run_backtest, run_multi_dataset_backtest
 from services.pyfolio_service import PyfolioService
 from services.auth_service import AuthService
 from services.strategies_service import StrategiesService
+from services.hyperliquid_service import HyperliquidService
 from models.schemas import (
     BacktestRequest, BacktestResponse, UploadResponse, Dataset, 
     CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest,
     UserLogin, UserRegister, Token, User,
-    SaveStrategyRequest, StrategySummary, StrategyDetail, StrategiesResponse
+    SaveStrategyRequest, StrategySummary, StrategyDetail, StrategiesResponse,
+    HyperliquidSettingsRequest, HyperliquidSettingsResponse, HyperliquidSettingsListResponse
 )
 
 # Configurar logging
@@ -34,6 +36,7 @@ logger = logging.getLogger(__name__)
 security = HTTPBearer()
 auth_service = AuthService()
 strategies_service = StrategiesService()
+hyperliquid_service = HyperliquidService()
 
 app = FastAPI(
     title="Backtesting API",
@@ -565,6 +568,102 @@ async def delete_strategy(
         raise
     except Exception as e:
         logger.error(f"Error eliminando estrategia {strategy_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+# Endpoints de Hyperliquid
+@app.post("/api/hyperliquid/settings", response_model=HyperliquidSettingsResponse)
+async def save_hyperliquid_settings(
+    settings_data: HyperliquidSettingsRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Guarda o actualiza la configuración de Hyperliquid de un usuario.
+    """
+    try:
+        settings = hyperliquid_service.save_hyperliquid_settings(
+            user_id=current_user["id"],
+            username=current_user["username"],
+            api_wallet_name=settings_data.api_wallet_name,
+            api_wallet_address=settings_data.api_wallet_address,
+            api_private_key=settings_data.api_private_key
+        )
+        
+        return HyperliquidSettingsResponse(**settings)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error guardando configuración de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/hyperliquid/settings", response_model=HyperliquidSettingsResponse)
+async def get_hyperliquid_settings(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene la configuración de Hyperliquid del usuario actual.
+    """
+    try:
+        settings = hyperliquid_service.get_hyperliquid_settings(current_user["id"])
+        if not settings:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid")
+        
+        return HyperliquidSettingsResponse(**settings)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo configuración de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.delete("/api/hyperliquid/settings")
+async def delete_hyperliquid_settings(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Elimina la configuración de Hyperliquid del usuario actual.
+    """
+    try:
+        success = hyperliquid_service.delete_hyperliquid_settings(current_user["id"])
+        if not success:
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid para eliminar")
+        
+        return {"message": "Configuración de Hyperliquid eliminada exitosamente"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error eliminando configuración de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/hyperliquid/settings/all", response_model=HyperliquidSettingsListResponse)
+async def get_all_hyperliquid_settings(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene todas las configuraciones de Hyperliquid (solo para administración).
+    """
+    try:
+        # Verificar si el usuario es administrador (opcional)
+        # if current_user["role"] != "admin":
+        #     raise HTTPException(status_code=403, detail="No tienes permisos para ver todas las configuraciones")
+        
+        settings_list = hyperliquid_service.get_all_hyperliquid_settings()
+        
+        settings_responses = [
+            HyperliquidSettingsResponse(**settings) 
+            for settings in settings_list
+        ]
+        
+        return HyperliquidSettingsListResponse(
+            settings=settings_responses,
+            total_count=len(settings_responses)
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo todas las configuraciones de Hyperliquid: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 if __name__ == "__main__":

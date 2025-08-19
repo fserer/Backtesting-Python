@@ -203,3 +203,39 @@ class StrategyDetail(BaseModel):
 class StrategiesResponse(BaseModel):
     strategies: List[StrategySummary]
     total_count: int
+
+# Esquemas para Hyperliquid
+class HyperliquidSettingsRequest(BaseModel):
+    api_wallet_name: str = Field(..., min_length=1, max_length=100)
+    api_wallet_address: str = Field(..., min_length=42, max_length=42)  # Ethereum address length
+    api_private_key: str = Field(..., min_length=64, max_length=66)  # Private key length
+    
+    @validator('api_wallet_address')
+    def validate_wallet_address(cls, v):
+        if not v.startswith('0x'):
+            raise ValueError('La dirección de wallet debe comenzar con 0x')
+        if len(v) != 42:
+            raise ValueError('La dirección de wallet debe tener 42 caracteres')
+        return v
+    
+    @validator('api_private_key')
+    def validate_private_key(cls, v):
+        if not v.startswith('0x'):
+            v = '0x' + v
+        if len(v) != 66:
+            raise ValueError('La clave privada debe tener 64 caracteres (66 con 0x)')
+        return v
+
+class HyperliquidSettingsResponse(BaseModel):
+    id: int
+    user_id: int
+    username: str
+    api_wallet_name: str
+    api_wallet_address: str
+    is_active: bool
+    created_at: str
+    updated_at: str
+
+class HyperliquidSettingsListResponse(BaseModel):
+    settings: List[HyperliquidSettingsResponse]
+    total_count: int

@@ -13,6 +13,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import SaveStrategyModal from './components/SaveStrategyModal';
 import StrategiesPage from './components/StrategiesPage';
+import HyperliquidPage from './components/HyperliquidPage';
 import Footer from './components/Footer';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
@@ -33,7 +34,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados de estrategias
-  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies'>('backtesting');
+  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies' | 'hyperliquid'>('backtesting');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSavingStrategy, setIsSavingStrategy] = useState(false);
   const [saveStrategyError, setSaveStrategyError] = useState('');
@@ -266,6 +267,16 @@ function AppContent() {
               >
                 Estrategias
               </button>
+              <button
+                onClick={() => setCurrentPage('hyperliquid')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  currentPage === 'hyperliquid'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Hyperliquid
+              </button>
             </nav>
           </div>
         </div>
@@ -369,10 +380,12 @@ function AppContent() {
               </div>
             )}
           </>
-        ) : (
+        ) : currentPage === 'strategies' ? (
           <StrategiesPage 
             currentUserId={currentUser?.id || 0}
           />
+        ) : (
+          <HyperliquidPage />
         )}
 
         {/* Modal de Guardar Estrategia */}
