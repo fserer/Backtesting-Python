@@ -361,6 +361,9 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
         # Información detallada de operaciones
         trades_data = []
         total_fees = 0.0
+        total_funding_cost = 0.0
+        funding_rate_annual = 11.6  # Tasa de funding anual en porcentaje
+        
         if hasattr(portfolio.trades, 'records_readable') and len(portfolio.trades.records_readable) > 0:
             trades_df = portfolio.trades.records_readable
             
@@ -403,6 +406,22 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
                     entry_fees = float(trade.get('Entry Fees', trade.get('entry_fees', 0)))
                     exit_fees = float(trade.get('Exit Fees', trade.get('exit_fees', 0)))
                     total_fees += entry_fees + exit_fees
+                    
+                    # Calcular funding cost
+                    if entry_timestamp and exit_timestamp and trade.get('Size', trade.get('size', 0)) > 0:
+                        try:
+                            entry_date = pd.to_datetime(entry_timestamp)
+                            exit_date = pd.to_datetime(exit_timestamp)
+                            duration_days = (exit_date - entry_date).total_seconds() / (24 * 3600)
+                            
+                            # Calcular valor de la posición (tamaño * precio de entrada)
+                            position_value = float(trade.get('Size', trade.get('size', 0))) * entry_price
+                            
+                            # Calcular coste de funding (valor * tasa anual * días / 365)
+                            funding_cost = position_value * (funding_rate_annual / 100) * (duration_days / 365)
+                            total_funding_cost += funding_cost
+                        except Exception as e:
+                            logger.warning(f"Error calculando funding cost para trade {idx}: {e}")
                     
                     trades_data.append({
                         'entry_date': entry_timestamp,
@@ -454,7 +473,7 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
             'trades': trades_data,
             'total_fees': total_fees,
             'funding_cost': {
-                'totalFundingCost': 0.0  # Por ahora 0, se puede implementar después
+                'totalFundingCost': total_funding_cost
             },
             'freq': freq
         }

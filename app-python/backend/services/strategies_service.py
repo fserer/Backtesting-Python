@@ -144,6 +144,9 @@ class StrategiesService:
                 funding_cost = results.get('funding_cost', {}).get('totalFundingCost', 0)
                 total_costs = total_fees + funding_cost
                 
+                # Debug: imprimir costes para verificar
+                logger.info(f"Estrategia {strategy_id}: total_fees={total_fees}, funding_cost={funding_cost}, total_costs={total_costs}")
+                
                 # P&L Neto
                 net_pnl = total_pnl - total_costs
                 
