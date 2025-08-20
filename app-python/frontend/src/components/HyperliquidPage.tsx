@@ -186,10 +186,11 @@ export default function HyperliquidPage() {
   };
 
   const handleRefreshData = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    if (settings) {
+      loadHyperliquidData();
+    } else {
+      setError('No hay configuración de Hyperliquid. Por favor, configura tus wallets primero.');
+    }
   };
 
   const handleOpenNewPosition = () => {
@@ -197,12 +198,36 @@ export default function HyperliquidPage() {
     console.log('Abrir nueva posición');
   };
 
-  const handleLoadMoreTrades = () => {
+  const handleLoadMoreTrades = async () => {
+    if (!settings) return;
+    
     setLoadingMore(true);
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('token');
+      const currentLimit = trades.length + 20; // Cargar 20 más
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/hyperliquid/trades?limit=${currentLimit}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const tradesData = await response.json();
+        const newTrades = tradesData.trades || [];
+        setTrades(newTrades);
+        
+        // Si no hay más trades que cargar
+        if (newTrades.length <= trades.length) {
+          setHasMoreTrades(false);
+        }
+      } else {
+        console.error('Error cargando más trades');
+      }
+    } catch (error) {
+      console.error('Error cargando más trades:', error);
+    } finally {
       setLoadingMore(false);
-      setHasMoreTrades(false); // Simular que no hay más trades
-    }, 1000);
+    }
   };
 
   const handleSaveSettings = async () => {

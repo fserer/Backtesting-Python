@@ -16,16 +16,12 @@ class HyperliquidTradingService:
     def connect(self, account_address: str, secret_key: str):
         """Conecta con Hyperliquid usando las credenciales del usuario"""
         try:
-            # Configurar cliente de información
-            self.info_client = Info(constants.MAINNET_API_URL, skip_ws=True)
+            # Configurar cliente de información (solo para lectura de datos)
+            self.info_client = Info(constants.MAINNET_API_URL)
             
-            # Configurar cliente de exchange
-            self.exchange_client = Exchange(
-                constants.MAINNET_API_URL,
-                account_address,
-                secret_key,
-                skip_ws=True
-            )
+            # Guardar las credenciales para uso futuro
+            self.account_address = account_address
+            self.secret_key = secret_key
             
             self.is_connected = True
             logger.info(f"Conectado a Hyperliquid con cuenta: {account_address}")
@@ -40,6 +36,8 @@ class HyperliquidTradingService:
         """Desconecta de Hyperliquid"""
         self.info_client = None
         self.exchange_client = None
+        self.account_address = None
+        self.secret_key = None
         self.is_connected = False
         logger.info("Desconectado de Hyperliquid")
     
@@ -168,7 +166,7 @@ class HyperliquidTradingService:
                     'volume': volume,
                     'fee': fee,
                     'feePercentage': (fee / volume * 100) if volume > 0 else 0,
-                    'orderType': 'maker' if fee <= 0.02 else 'taker',
+                    'orderType': 'maker' if (fee / volume * 100) <= 0.015 else 'taker',
                     'timestamp': int(fill.get('time', 0)),
                     'date': self._format_timestamp(int(fill.get('time', 0))),
                     'time': self._format_time(int(fill.get('time', 0)))
