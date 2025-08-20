@@ -3,6 +3,8 @@ from typing import Dict, Any, Optional, List
 from hyperliquid.info import Info
 from hyperliquid.exchange import Exchange
 from hyperliquid.utils import constants
+import eth_account
+from eth_account.signers.local import LocalAccount
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -18,6 +20,16 @@ class HyperliquidTradingService:
         try:
             # Configurar cliente de información (solo para lectura de datos)
             self.info_client = Info(constants.MAINNET_API_URL)
+            
+            # Crear el objeto account usando eth_account
+            account: LocalAccount = eth_account.Account.from_key(secret_key)
+            
+            # Configurar cliente de exchange (para trading)
+            self.exchange_client = Exchange(
+                account, 
+                constants.MAINNET_API_URL, 
+                account_address=account_address
+            )
             
             # Guardar las credenciales para uso futuro
             self.account_address = account_address
@@ -178,10 +190,15 @@ class HyperliquidTradingService:
             logger.error(f"Error obteniendo historial de trades: {e}")
             return []
     
-    def place_order(self, coin: str, side: str, size: float, order_type: str = 'MARKET', limit_price: float = 0) -> Dict[str, Any]:
+    def place_order(self, coin: str, is_buy: bool, sz: float, limit_px: float = None, reduce_only: bool = False) -> Dict[str, Any]:
         """Coloca una orden en Hyperliquid"""
         try:
+            logger.info(f"Intentando colocar orden: coin={coin}, is_buy={is_buy}, sz={sz}, limit_px={limit_px}")
+            logger.info(f"Estado de conexión: exchange_client={self.exchange_client is not None}, is_connected={self.is_connected}")
+            
+            # Verificar que el Exchange client esté disponible
             if not self.exchange_client:
+                logger.error("Exchange client no está disponible")
                 return {'success': False, 'error': 'No conectado a Hyperliquid'}
             
             # Obtener el índice del asset
@@ -196,20 +213,20 @@ class HyperliquidTradingService:
                 return {'success': False, 'error': f'Asset {coin} no encontrado'}
             
             # Preparar la orden
-            is_buy = side.lower() == 'buy'
-            
-            if order_type == 'MARKET':
+            if limit_px is None or limit_px == 0:
                 # Para órdenes de mercado, usar precio 0
                 order_price = 0
+                order_type = 'MARKET'
             else:
-                order_price = limit_price
+                order_price = limit_px
+                order_type = 'LIMIT'
             
             order = {
                 'a': asset_index,
                 'b': is_buy,
                 'p': str(order_price),
-                's': str(size),
-                'r': False,  # reduceOnly
+                's': str(sz),
+                'r': reduce_only,  # reduceOnly
                 't': {
                     'limit': {
                         'tif': 'Ioc' if order_type == 'MARKET' else 'Gtc'
@@ -232,7 +249,9 @@ class HyperliquidTradingService:
     def cancel_order(self, coin: str, order_id: str) -> Dict[str, Any]:
         """Cancela una orden en Hyperliquid"""
         try:
+            # Verificar que el Exchange client esté disponible
             if not self.exchange_client:
+                logger.error("Exchange client no está disponible")
                 return {'success': False, 'error': 'No conectado a Hyperliquid'}
             
             # Obtener el índice del asset

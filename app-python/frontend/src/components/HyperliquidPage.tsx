@@ -77,6 +77,30 @@ export default function HyperliquidPage() {
   const [hasMoreTrades, setHasMoreTrades] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  // New position modal
+  const [showNewPositionModal, setShowNewPositionModal] = useState(false);
+  const [newPositionForm, setNewPositionForm] = useState({
+    asset: '',
+    orderType: 'MARKET',
+    positionType: 'LONG',
+    size: '0.01',
+    leverage: '5'
+  });
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  // Available assets
+  const availableAssets = [
+    'BTC', 'ETH', 'SOL', 'MATIC', 'LINK', 'UNI', 'AVAX', 'LDO', 'ARB', 'OP'
+  ];
+
+  const leverageOptions = [
+    { value: '2', label: '2x (Más seguro)' },
+    { value: '5', label: '5x (Estándar)' },
+    { value: '10', label: '10x (Más riesgo)' },
+    { value: '20', label: '20x (Alto riesgo)' }
+  ];
+
   // Cargar configuración al montar el componente
   useEffect(() => {
     loadHyperliquidSettings();
@@ -194,8 +218,68 @@ export default function HyperliquidPage() {
   };
 
   const handleOpenNewPosition = () => {
-    // TODO: Implementar diálogo para abrir nueva posición
-    console.log('Abrir nueva posición');
+    setShowNewPositionModal(true);
+    setOrderError('');
+    setNewPositionForm({
+      asset: '',
+      orderType: 'MARKET',
+      positionType: 'LONG',
+      size: '0.01',
+      leverage: '5'
+    });
+  };
+
+  const handleSubmitNewPosition = async () => {
+    if (!newPositionForm.asset) {
+      setOrderError('Por favor selecciona un activo');
+      return;
+    }
+
+    if (!newPositionForm.size || parseFloat(newPositionForm.size) <= 0) {
+      setOrderError('Por favor ingresa un tamaño de posición válido');
+      return;
+    }
+
+    setSubmittingOrder(true);
+    setOrderError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${baseUrl}/api/hyperliquid/order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          coin: newPositionForm.asset,
+          is_buy: newPositionForm.positionType === 'LONG',
+          sz: parseFloat(newPositionForm.size),
+          limit_px: newPositionForm.orderType === 'LIMIT' ? 0 : undefined, // Para market orders
+          reduce_only: false
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Orden enviada exitosamente:', result);
+        setShowNewPositionModal(false);
+        // Recargar datos después de un momento
+        setTimeout(() => {
+          loadHyperliquidData();
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        setOrderError(errorData.detail || 'Error al enviar la orden');
+      }
+    } catch (error) {
+      console.error('Error enviando orden:', error);
+      setOrderError('Error de conexión al enviar la orden');
+    } finally {
+      setSubmittingOrder(false);
+    }
   };
 
   const handleLoadMoreTrades = async () => {
@@ -727,6 +811,140 @@ export default function HyperliquidPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* New Position Modal */}
+      {showNewPositionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold flex items-center">
+                  <Plus className="h-5 w-5 text-green-600 mr-2" />
+                  Abrir Nueva Posición
+                </h2>
+                <p className="text-gray-600 text-sm">Abrir una nueva posición en Hyperliquid</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNewPositionModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {orderError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-800 text-sm">{orderError}</p>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              {/* Seleccionar Activo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Seleccionar Activo
+                </label>
+                <select
+                  value={newPositionForm.asset}
+                  onChange={(e) => setNewPositionForm(prev => ({ ...prev, asset: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={submittingOrder}
+                >
+                  <option value="">Seleccionar Activo</option>
+                  {availableAssets.map(asset => (
+                    <option key={asset} value={asset}>{asset}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tipo de Orden */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Orden
+                </label>
+                <select
+                  value={newPositionForm.orderType}
+                  onChange={(e) => setNewPositionForm(prev => ({ ...prev, orderType: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={submittingOrder}
+                >
+                  <option value="MARKET">Precio de Mercado</option>
+                  <option value="LIMIT">Precio de Límite</option>
+                </select>
+              </div>
+
+              {/* Tipo de Posición */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Posición
+                </label>
+                <select
+                  value={newPositionForm.positionType}
+                  onChange={(e) => setNewPositionForm(prev => ({ ...prev, positionType: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={submittingOrder}
+                >
+                  <option value="LONG">Largo (Comprar)</option>
+                  <option value="SHORT">Corto (Vender)</option>
+                </select>
+              </div>
+
+              {/* Tamaño de la Posición */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tamaño de la Posición
+                </label>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  value={newPositionForm.size}
+                  onChange={(e) => setNewPositionForm(prev => ({ ...prev, size: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.01"
+                  disabled={submittingOrder}
+                />
+              </div>
+
+              {/* Apalancamiento */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Apalancamiento
+                </label>
+                <select
+                  value={newPositionForm.leverage}
+                  onChange={(e) => setNewPositionForm(prev => ({ ...prev, leverage: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={submittingOrder}
+                >
+                  {leverageOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 mt-6">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowNewPositionModal(false)}
+                disabled={submittingOrder}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={handleSubmitNewPosition}
+                disabled={submittingOrder}
+              >
+                {submittingOrder ? 'Enviando...' : 'Confirmar Apertura'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal */}
       {showSettings && (

@@ -16,3 +16,4 @@ python-multipart>=0.0.6
 
 # Hyperliquid SDK
 hyperliquid-python-sdk>=0.18.0
+eth-account>=0.9.0

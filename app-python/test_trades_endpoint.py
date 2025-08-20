@@ -52,3 +52,4 @@ def test_trades_endpoint():
 
 if __name__ == "__main__":
     test_trades_endpoint()
+
