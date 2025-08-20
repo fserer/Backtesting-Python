@@ -38,11 +38,30 @@ class AuthService:
                     username TEXT UNIQUE NOT NULL,
                     email TEXT UNIQUE,
                     hashed_password TEXT NOT NULL,
+                    main_wallet TEXT,
+                    hyperliquid_wallet TEXT,
+                    api_secret_key TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_login TIMESTAMP,
                     is_active BOOLEAN DEFAULT 1
                 )
             """)
+            
+            # Agregar las nuevas columnas si no existen (para compatibilidad con tablas existentes)
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN main_wallet TEXT")
+            except sqlite3.OperationalError:
+                pass  # La columna ya existe
+            
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN hyperliquid_wallet TEXT")
+            except sqlite3.OperationalError:
+                pass  # La columna ya existe
+            
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN api_secret_key TEXT")
+            except sqlite3.OperationalError:
+                pass  # La columna ya existe
             
             conn.commit()
             conn.close()
@@ -229,4 +248,54 @@ class AuthService:
             
         except Exception as e:
             logger.error(f"Error obteniendo usuario: {e}")
+            return None
+    
+    def update_hyperliquid_settings(self, user_id: int, main_wallet: str, hyperliquid_wallet: str, api_secret_key: str) -> bool:
+        """Actualiza la configuración de Hyperliquid de un usuario"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE users 
+                SET main_wallet = ?, hyperliquid_wallet = ?, api_secret_key = ?
+                WHERE id = ?
+            """, (main_wallet, hyperliquid_wallet, api_secret_key, user_id))
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"Configuración de Hyperliquid actualizada para usuario {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error actualizando configuración de Hyperliquid: {e}")
+            return False
+    
+    def get_hyperliquid_settings(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """Obtiene la configuración de Hyperliquid de un usuario"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT main_wallet, hyperliquid_wallet, api_secret_key
+                FROM users 
+                WHERE id = ? AND is_active = 1
+            """, (user_id,))
+            
+            user_data = cursor.fetchone()
+            conn.close()
+            
+            if not user_data:
+                return None
+            
+            main_wallet, hyperliquid_wallet, api_secret_key = user_data
+            return {
+                "main_wallet": main_wallet,
+                "hyperliquid_wallet": hyperliquid_wallet,
+                "api_secret_key": api_secret_key
+            }
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo configuración de Hyperliquid: {e}")
             return None

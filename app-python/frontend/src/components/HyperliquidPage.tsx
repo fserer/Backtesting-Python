@@ -50,10 +50,9 @@ interface HyperliquidTrade {
 }
 
 interface HyperliquidSettings {
-  id: string;
-  api_wallet_name: string;
-  api_wallet_address: string;
-  api_private_key: string;
+  main_wallet?: string;
+  hyperliquid_wallet?: string;
+  api_secret_key?: string;
 }
 
 export default function HyperliquidPage() {
@@ -66,9 +65,9 @@ export default function HyperliquidPage() {
   const [settings, setSettings] = useState<HyperliquidSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState({
-    api_wallet_name: '',
-    api_wallet_address: '',
-    api_private_key: ''
+    main_wallet: '',
+    hyperliquid_wallet: '',
+    api_secret_key: ''
   });
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState('');
@@ -102,10 +101,11 @@ export default function HyperliquidPage() {
       if (response.ok) {
         const settingsData = await response.json();
         setSettings(settingsData);
+        setSettings(settingsData);
         setSettingsForm({
-          api_wallet_name: settingsData.api_wallet_name || '',
-          api_wallet_address: settingsData.api_wallet_address || '',
-          api_private_key: settingsData.api_private_key || ''
+          main_wallet: settingsData.main_wallet || '',
+          hyperliquid_wallet: settingsData.hyperliquid_wallet || '',
+          api_secret_key: settingsData.api_secret_key || ''
         });
       } else if (response.status === 404) {
         // No hay configuración, mostrar formulario vacío
@@ -239,25 +239,31 @@ export default function HyperliquidPage() {
   };
 
   const handleDeleteSettings = async () => {
-    if (!confirm('¿Estás seguro de que quieres eliminar la configuración de Hyperliquid?')) {
+    if (!confirm('¿Estás seguro de que quieres limpiar la configuración de Hyperliquid?')) {
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/hyperliquid/settings`, {
-        method: 'DELETE',
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          main_wallet: '',
+          hyperliquid_wallet: '',
+          api_secret_key: ''
+        })
       });
 
       if (response.ok) {
         setSettings(null);
         setSettingsForm({
-          api_wallet_name: '',
-          api_wallet_address: '',
-          api_private_key: ''
+          main_wallet: '',
+          hyperliquid_wallet: '',
+          api_secret_key: ''
         });
         setShowSettings(false);
         // Limpiar datos
@@ -266,10 +272,10 @@ export default function HyperliquidPage() {
         setOpenOrders([]);
         setTrades([]);
       } else {
-        setSettingsError('Error eliminando configuración');
+        setSettingsError('Error limpiando configuración');
       }
     } catch (error) {
-      console.error('Error eliminando configuración:', error);
+      console.error('Error limpiando configuración:', error);
       setSettingsError('Error de conexión');
     }
   };
@@ -721,16 +727,17 @@ export default function HyperliquidPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mi Wallet
+                  Main Wallet
                 </label>
                 <input
                   type="text"
-                  value={settingsForm.api_wallet_name}
-                  onChange={(e) => setSettingsForm(prev => ({ ...prev, api_wallet_name: e.target.value }))}
+                  value={settingsForm.main_wallet}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, main_wallet: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0x..."
                   disabled={savingSettings}
                 />
+                <p className="text-xs text-gray-500 mt-1">Wallet principal para ver posiciones y trades</p>
               </div>
               
               <div>
@@ -739,12 +746,13 @@ export default function HyperliquidPage() {
                 </label>
                 <input
                   type="text"
-                  value={settingsForm.api_wallet_address}
-                  onChange={(e) => setSettingsForm(prev => ({ ...prev, api_wallet_address: e.target.value }))}
+                  value={settingsForm.hyperliquid_wallet}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, hyperliquid_wallet: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0x..."
                   disabled={savingSettings}
                 />
+                <p className="text-xs text-gray-500 mt-1">Wallet específica de Hyperliquid</p>
               </div>
               
               <div>
@@ -753,12 +761,13 @@ export default function HyperliquidPage() {
                 </label>
                 <input
                   type="password"
-                  value={settingsForm.api_private_key}
-                  onChange={(e) => setSettingsForm(prev => ({ ...prev, api_private_key: e.target.value }))}
+                  value={settingsForm.api_secret_key}
+                  onChange={(e) => setSettingsForm(prev => ({ ...prev, api_secret_key: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Tu clave secreta..."
                   disabled={savingSettings}
                 />
+                <p className="text-xs text-gray-500 mt-1">Clave privada para firmar transacciones</p>
               </div>
             </div>
             
@@ -789,7 +798,7 @@ export default function HyperliquidPage() {
                   disabled={savingSettings}
                   className="w-full"
                 >
-                  Eliminar Configuración
+                  Limpiar Configuración
                 </Button>
               </div>
             )}
