@@ -226,7 +226,7 @@ function AppContent() {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Backtesting App</h1>
               <p className="text-muted-foreground mt-2">
-                Sube tu CSV y ejecuta backtests con vectorbt
+                Backtests con métricas Onchain
               </p>
             </div>
             <div className="flex items-center gap-4">
