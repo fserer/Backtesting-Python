@@ -637,14 +637,18 @@ async def get_hyperliquid_positions(
     try:
         # Obtener configuración del usuario
         settings = auth_service.get_hyperliquid_settings(current_user["id"])
+        logger.info(f"Configuración obtenida para usuario {current_user['id']}: {settings}")
+        
         if not settings or not settings.get("main_wallet") or not settings.get("api_secret_key"):
             raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
         
-        # Conectar con Hyperliquid
+        # Conectar con Hyperliquid usando main wallet y api private key
+        logger.info(f"Conectando con Hyperliquid usando main wallet: {settings['main_wallet']}")
         if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
             raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
         
-        # Obtener posiciones
+        # Obtener posiciones usando la main wallet
+        logger.info(f"Obteniendo posiciones para main wallet: {settings['main_wallet']}")
         positions = hyperliquid_trading_service.get_positions(settings["main_wallet"])
         
         return {"positions": positions}
@@ -653,6 +657,38 @@ async def get_hyperliquid_positions(
         raise
     except Exception as e:
         logger.error(f"Error obteniendo posiciones de Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.get("/api/hyperliquid/all-data")
+async def get_hyperliquid_all_data(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Obtiene todos los datos de Hyperliquid en paralelo para mayor velocidad.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = auth_service.get_hyperliquid_settings(current_user["id"])
+        logger.info(f"Configuración obtenida para usuario {current_user['id']}: {settings}")
+        
+        if not settings or not settings.get("main_wallet") or not settings.get("api_secret_key"):
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
+        
+        # Conectar con Hyperliquid usando main wallet y api private key
+        logger.info(f"Conectando con Hyperliquid usando main wallet: {settings['main_wallet']}")
+        if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Obtener todos los datos en paralelo
+        logger.info(f"Obteniendo todos los datos en paralelo para main wallet: {settings['main_wallet']}")
+        all_data = hyperliquid_trading_service.get_all_data_parallel(settings["main_wallet"])
+        
+        return all_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error obteniendo datos de Hyperliquid: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 @app.get("/api/hyperliquid/balances")
@@ -665,14 +701,14 @@ async def get_hyperliquid_balances(
     try:
         # Obtener configuración del usuario
         settings = auth_service.get_hyperliquid_settings(current_user["id"])
-        if not settings or not settings.get("main_wallet") or not settings.get("api_secret_key"):
+        if not settings or not settings.get("api_secret_key"):
             raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
         
-        # Conectar con Hyperliquid
+        # Conectar con Hyperliquid usando main wallet y api private key
         if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
             raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
         
-        # Obtener balances
+        # Obtener balances usando la main wallet
         balances = hyperliquid_trading_service.get_balances(settings["main_wallet"])
         
         return {"balances": balances}
@@ -693,14 +729,14 @@ async def get_hyperliquid_orders(
     try:
         # Obtener configuración del usuario
         settings = auth_service.get_hyperliquid_settings(current_user["id"])
-        if not settings or not settings.get("main_wallet") or not settings.get("api_secret_key"):
+        if not settings or not settings.get("api_secret_key"):
             raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
         
-        # Conectar con Hyperliquid
+        # Conectar con Hyperliquid usando main wallet y api private key
         if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
             raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
         
-        # Obtener órdenes
+        # Obtener órdenes usando la main wallet
         orders = hyperliquid_trading_service.get_open_orders(settings["main_wallet"])
         
         return {"orders": orders}
@@ -722,14 +758,14 @@ async def get_hyperliquid_trades(
     try:
         # Obtener configuración del usuario
         settings = auth_service.get_hyperliquid_settings(current_user["id"])
-        if not settings or not settings.get("main_wallet") or not settings.get("api_secret_key"):
+        if not settings or not settings.get("api_secret_key"):
             raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
         
-        # Conectar con Hyperliquid
+        # Conectar con Hyperliquid usando main wallet y api private key
         if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
             raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
         
-        # Obtener trades
+        # Obtener trades usando la main wallet
         trades = hyperliquid_trading_service.get_trade_history(settings["main_wallet"], limit)
         
         return {"trades": trades}
@@ -751,20 +787,25 @@ async def place_hyperliquid_order(
     try:
         # Obtener configuración del usuario
         settings = auth_service.get_hyperliquid_settings(current_user["id"])
-        if not settings or not settings.get("hyperliquid_wallet") or not settings.get("api_secret_key"):
+        if not settings or not settings.get("api_secret_key"):
             raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
         
-        # Conectar con Hyperliquid usando hyperliquid_wallet para órdenes
-        if not hyperliquid_trading_service.connect(settings["hyperliquid_wallet"], settings["api_secret_key"]):
+        # Conectar con Hyperliquid usando main wallet y api private key
+        if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
             raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Determinar si es orden límite o de mercado
+        limit_px = order_data.get("limit_px")
+        order_type = "LIMIT" if limit_px and limit_px > 0 else "MARKET"
         
         # Colocar orden
         result = hyperliquid_trading_service.place_order(
             coin=order_data["coin"],
             is_buy=order_data["is_buy"],
             sz=float(order_data["sz"]),
-            limit_px=order_data.get("limit_px"),
-            reduce_only=order_data.get("reduce_only", False)
+            limit_px=limit_px,
+            reduce_only=order_data.get("reduce_only", False),
+            order_type=order_type
         )
         
         if not result["success"]:
@@ -776,6 +817,138 @@ async def place_hyperliquid_order(
         raise
     except Exception as e:
         logger.error(f"Error colocando orden en Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.post("/api/hyperliquid/close-position")
+async def close_hyperliquid_position(
+    position_data: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Cierra una posición en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = auth_service.get_hyperliquid_settings(current_user["id"])
+        if not settings or not settings.get("api_secret_key"):
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
+        
+        # Conectar con Hyperliquid usando main wallet y api private key
+        if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Cerrar posición (orden de mercado en dirección opuesta)
+        coin = position_data["coin"]
+        position_size = float(position_data["size"])
+        is_long = position_data.get("is_long", True)
+        
+        # Para cerrar, necesitamos hacer lo opuesto de la posición actual
+        is_buy = not is_long  # Si es long, vendemos para cerrar. Si es short, compramos para cerrar
+        
+        result = hyperliquid_trading_service.place_order(
+            coin=coin,
+            is_buy=is_buy,
+            sz=position_size,
+            limit_px=None,  # Orden de mercado
+            reduce_only=False  # Para cerrar posición usar false como en el payload que funciona
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cerrando posición en Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.post("/api/hyperliquid/increase-position")
+async def increase_hyperliquid_position(
+    position_data: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Aumenta una posición existente en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = auth_service.get_hyperliquid_settings(current_user["id"])
+        if not settings or not settings.get("api_secret_key"):
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
+        
+        # Conectar con Hyperliquid usando main wallet y api private key
+        if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Aumentar posición (misma dirección que la posición actual)
+        coin = position_data["coin"]
+        amount = float(position_data["amount"])
+        is_long = position_data.get("is_long", True)
+        
+        result = hyperliquid_trading_service.place_order(
+            coin=coin,
+            is_buy=is_long,  # Si es long, compramos más. Si es short, vendemos más
+            sz=amount,
+            limit_px=position_data.get("limit_px"),  # Puede ser None para mercado
+            reduce_only=False
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error aumentando posición en Hyperliquid: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+@app.post("/api/hyperliquid/decrease-position")
+async def decrease_hyperliquid_position(
+    position_data: Dict[str, Any],
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Reduce una posición existente en Hyperliquid.
+    """
+    try:
+        # Obtener configuración del usuario
+        settings = auth_service.get_hyperliquid_settings(current_user["id"])
+        if not settings or not settings.get("api_secret_key"):
+            raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
+        
+        # Conectar con Hyperliquid usando main wallet y api private key
+        if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
+            raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
+        
+        # Reducir posición (dirección opuesta a la posición actual)
+        coin = position_data["coin"]
+        amount = float(position_data["amount"])
+        is_long = position_data.get("is_long", True)
+        
+        # Para reducir, necesitamos hacer lo opuesto de la posición actual
+        is_buy = not is_long  # Si es long, vendemos para reducir. Si es short, compramos para reducir
+        
+        result = hyperliquid_trading_service.place_order(
+            coin=coin,
+            is_buy=is_buy,
+            sz=amount,
+            limit_px=position_data.get("limit_px"),  # Puede ser None para mercado
+            reduce_only=False  # Para reducir posición usar false como en el payload que funciona
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["error"])
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reduciendo posición en Hyperliquid: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 @app.delete("/api/hyperliquid/order/{order_id}")
@@ -790,11 +963,11 @@ async def cancel_hyperliquid_order(
     try:
         # Obtener configuración del usuario
         settings = auth_service.get_hyperliquid_settings(current_user["id"])
-        if not settings or not settings.get("hyperliquid_wallet") or not settings.get("api_secret_key"):
+        if not settings or not settings.get("api_secret_key"):
             raise HTTPException(status_code=404, detail="No se encontró configuración de Hyperliquid. Por favor, configura tus wallets en la pestaña de configuración.")
         
-        # Conectar con Hyperliquid usando hyperliquid_wallet para órdenes
-        if not hyperliquid_trading_service.connect(settings["hyperliquid_wallet"], settings["api_secret_key"]):
+        # Conectar con Hyperliquid usando main wallet y api private key
+        if not hyperliquid_trading_service.connect(settings["main_wallet"], settings["api_secret_key"]):
             raise HTTPException(status_code=500, detail="Error conectando con Hyperliquid")
         
         # Cancelar orden

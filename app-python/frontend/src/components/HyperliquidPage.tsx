@@ -84,10 +84,26 @@ export default function HyperliquidPage() {
     orderType: 'MARKET',
     positionType: 'LONG',
     size: '0.01',
-    leverage: '5'
+    leverage: '5',
+    limitPrice: ''
   });
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
+
+  // Position action modals
+  const [showCloseModal, setShowCloseModal] = useState({ show: false, position: null });
+  const [showIncreaseModal, setShowIncreaseModal] = useState({ show: false, position: null });
+  const [showDecreaseModal, setShowDecreaseModal] = useState({ show: false, position: null });
+  const [showCancelOrderModal, setShowCancelOrderModal] = useState({ show: false, orderId: '', coin: '' });
+  const [modalAmount, setModalAmount] = useState('');
+  const [modalLeverage, setModalLeverage] = useState('5');
+  const [modalLoading, setModalLoading] = useState(false);
+  
+  // Separate result states for each modal
+  const [closeModalResult, setCloseModalResult] = useState({ success: false, message: '' });
+  const [increaseModalResult, setIncreaseModalResult] = useState({ success: false, message: '' });
+  const [decreaseModalResult, setDecreaseModalResult] = useState({ success: false, message: '' });
+  const [cancelOrderModalResult, setCancelOrderModalResult] = useState({ success: false, message: '' });
 
   // Available assets
   const availableAssets = [
@@ -153,52 +169,22 @@ export default function HyperliquidPage() {
       const token = localStorage.getItem('token');
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       
-      // Cargar posiciones
-      const positionsResponse = await fetch(`${baseUrl}/api/hyperliquid/positions`, {
+      // Cargar todos los datos en una sola llamada optimizada
+      const allDataResponse = await fetch(`${baseUrl}/api/hyperliquid/all-data`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      if (positionsResponse.ok) {
-        const positionsData = await positionsResponse.json();
-        setPositions(positionsData.positions || []);
-      }
-      
-      // Cargar balances
-      const balancesResponse = await fetch(`${baseUrl}/api/hyperliquid/balances`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (balancesResponse.ok) {
-        const balancesData = await balancesResponse.json();
-        setBalances(balancesData.balances || []);
-      }
-      
-      // Cargar órdenes abiertas
-      const ordersResponse = await fetch(`${baseUrl}/api/hyperliquid/orders`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (ordersResponse.ok) {
-        const ordersData = await ordersResponse.json();
-        setOpenOrders(ordersData.orders || []);
-      }
-      
-      // Cargar historial de trades
-      const tradesResponse = await fetch(`${baseUrl}/api/hyperliquid/trades?limit=20`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (tradesResponse.ok) {
-        const tradesData = await tradesResponse.json();
-        setTrades(tradesData.trades || []);
+      if (allDataResponse.ok) {
+        const allData = await allDataResponse.json();
+        setPositions(allData.positions || []);
+        setBalances(allData.balances || []);
+        setOpenOrders(allData.orders || []);
+        setTrades(allData.trades || []);
+      } else {
+        console.error('Error cargando datos de Hyperliquid');
+        setError('Error cargando datos de Hyperliquid');
       }
       
     } catch (error) {
@@ -240,6 +226,12 @@ export default function HyperliquidPage() {
       return;
     }
 
+    // Validar precio límite si es orden límite
+    if (newPositionForm.orderType === 'LIMIT' && (!newPositionForm.limitPrice || parseFloat(newPositionForm.limitPrice) <= 0)) {
+      setOrderError('Por favor ingresa un precio límite válido');
+      return;
+    }
+
     setSubmittingOrder(true);
     setOrderError('');
 
@@ -247,25 +239,39 @@ export default function HyperliquidPage() {
       const token = localStorage.getItem('token');
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       
+      const orderData = {
+        coin: newPositionForm.asset,
+        is_buy: newPositionForm.positionType === 'LONG',
+        sz: parseFloat(newPositionForm.size),
+        reduce_only: false
+      };
+
+      // Agregar precio límite si es orden límite
+      if (newPositionForm.orderType === 'LIMIT') {
+        orderData.limit_px = parseFloat(newPositionForm.limitPrice);
+      }
+      
       const response = await fetch(`${baseUrl}/api/hyperliquid/order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          coin: newPositionForm.asset,
-          is_buy: newPositionForm.positionType === 'LONG',
-          sz: parseFloat(newPositionForm.size),
-          limit_px: newPositionForm.orderType === 'LIMIT' ? 0 : undefined, // Para market orders
-          reduce_only: false
-        })
+        body: JSON.stringify(orderData)
       });
 
       if (response.ok) {
         const result = await response.json();
         console.log('Orden enviada exitosamente:', result);
         setShowNewPositionModal(false);
+        setNewPositionForm({
+          asset: '',
+          orderType: 'MARKET',
+          positionType: 'LONG',
+          size: '0.01',
+          leverage: '5',
+          limitPrice: ''
+        });
         // Recargar datos después de un momento
         setTimeout(() => {
           loadHyperliquidData();
@@ -279,6 +285,132 @@ export default function HyperliquidPage() {
       setOrderError('Error de conexión al enviar la orden');
     } finally {
       setSubmittingOrder(false);
+    }
+  };
+
+  // Función para cerrar posición
+  const handleClosePosition = async (position: HyperliquidPosition) => {
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${baseUrl}/api/hyperliquid/close-position`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          coin: position.coin,
+          size: Math.abs(position.size),
+          is_long: position.side === 'long'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Posición cerrada exitosamente:', result);
+        return { success: true, data: result };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || 'Error desconocido' };
+      }
+    } catch (error) {
+      console.error('Error cerrando posición:', error);
+      return { success: false, error: 'Error de conexión al cerrar la posición' };
+    }
+  };
+
+  // Función para ampliar posición
+  const handleIncreasePosition = async (position: HyperliquidPosition, amount: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${baseUrl}/api/hyperliquid/increase-position`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          coin: position.coin,
+          amount: amount,
+          is_long: position.side === 'long'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Posición ampliada exitosamente:', result);
+        return { success: true, data: result };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || 'Error desconocido' };
+      }
+    } catch (error) {
+      console.error('Error ampliando posición:', error);
+      return { success: false, error: 'Error de conexión al ampliar la posición' };
+    }
+  };
+
+  // Función para reducir posición
+  const handleDecreasePosition = async (position: HyperliquidPosition, amount: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${baseUrl}/api/hyperliquid/decrease-position`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          coin: position.coin,
+          amount: amount,
+          is_long: position.side === 'long'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Posición reducida exitosamente:', result);
+        return { success: true, data: result };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || 'Error desconocido' };
+      }
+    } catch (error) {
+      console.error('Error reduciendo posición:', error);
+      return { success: false, error: 'Error de conexión al reducir la posición' };
+    }
+  };
+
+  // Función para cancelar orden
+  const handleCancelOrder = async (orderId: string, coin: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${baseUrl}/api/hyperliquid/order/${orderId}?coin=${coin}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Orden cancelada exitosamente:', result);
+        return { success: true, data: result };
+      } else {
+        const errorData = await response.json();
+        return { success: false, error: errorData.detail || 'Error desconocido' };
+      }
+    } catch (error) {
+      console.error('Error cancelando orden:', error);
+      return { success: false, error: 'Error de conexión al cancelar la orden' };
     }
   };
 
@@ -513,15 +645,30 @@ export default function HyperliquidPage() {
                     </div>
                     
                     <div className="flex space-x-2">
-                      <Button size="sm" variant="destructive" className="bg-red-600 hover:bg-red-700">
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        className="bg-red-600 hover:bg-red-700"
+                        onClick={() => setShowCloseModal({ show: true, position })}
+                      >
                         <X className="w-4 h-4 mr-1" />
                         Cerrar
                       </Button>
-                      <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
+                      <Button 
+                        size="sm" 
+                        variant="default" 
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => setShowIncreaseModal({ show: true, position })}
+                      >
                         <Plus className="w-4 h-4 mr-1" />
                         Ampliar
                       </Button>
-                      <Button size="sm" variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                        onClick={() => setShowDecreaseModal({ show: true, position })}
+                      >
                         <Minus className="w-4 h-4 mr-1" />
                         Reducir
                       </Button>
@@ -593,7 +740,12 @@ export default function HyperliquidPage() {
                     </div>
                     
                     <div className="flex justify-end">
-                      <Button size="sm" variant="destructive" className="bg-red-600 hover:bg-red-700">
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        className="bg-red-600 hover:bg-red-700"
+                        onClick={() => setShowCancelOrderModal({ show: true, orderId: order.id, coin: order.coin })}
+                      >
                         <X className="w-4 h-4 mr-1" />
                         Cancelar Orden
                       </Button>
@@ -907,6 +1059,28 @@ export default function HyperliquidPage() {
                 />
               </div>
 
+              {/* Precio Límite - Solo mostrar si es orden límite */}
+              {newPositionForm.orderType === 'LIMIT' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Precio Límite (USD)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={newPositionForm.limitPrice}
+                    onChange={(e) => setNewPositionForm(prev => ({ ...prev, limitPrice: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="4000.00"
+                    disabled={submittingOrder}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Precio al que quieres que se ejecute la orden
+                  </p>
+                </div>
+              )}
+
               {/* Apalancamiento */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1045,6 +1219,386 @@ export default function HyperliquidPage() {
                 </Button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cerrar Posición */}
+      {showCloseModal.show && showCloseModal.position && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <X className="w-5 h-5 text-red-500 mr-2" />
+                Cerrar Posición
+              </h3>
+              <button 
+                onClick={() => setShowCloseModal({ show: false, position: null })}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              ¿Estás seguro de que quieres cerrar tu posición de {showCloseModal.position.coin}?
+            </p>
+            
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
+              <div className="text-sm text-gray-600">
+                <div className="flex justify-between mb-1">
+                  <span>Tamaño actual:</span>
+                  <span className="font-mono">{Math.abs(showCloseModal.position.size).toFixed(6)} {showCloseModal.position.coin}</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>P&L actual:</span>
+                  <span className={showCloseModal.position.unrealizedPnl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {showCloseModal.position.unrealizedPnl >= 0 ? '+' : ''}{formatUSD(showCloseModal.position.unrealizedPnl)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {closeModalResult.message && (
+              <div className={`mb-4 p-3 rounded-lg ${closeModalResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                {closeModalResult.message}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCloseModal({ show: false, position: null });
+                  setCloseModalResult({ success: false, message: '' });
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={modalLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  setModalLoading(true);
+                  setCloseModalResult({ success: false, message: '' });
+                  
+                  try {
+                    const result = await handleClosePosition(showCloseModal.position);
+                    if (result.success) {
+                      setCloseModalResult({ success: true, message: `Posición de ${showCloseModal.position.coin} cerrada exitosamente` });
+                      setTimeout(() => {
+                        setShowCloseModal({ show: false, position: null });
+                        setCloseModalResult({ success: false, message: '' });
+                        loadHyperliquidData();
+                      }, 2000);
+                    } else {
+                      setCloseModalResult({ success: false, message: result.error || 'Error al cerrar la posición' });
+                    }
+                  } catch (error) {
+                    setCloseModalResult({ success: false, message: 'Error de conexión' });
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                disabled={modalLoading}
+              >
+                {modalLoading ? 'Cerrando...' : 'Sí, Cerrar Posición'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Ampliar Posición */}
+      {showIncreaseModal.show && showIncreaseModal.position && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Plus className="w-5 h-5 text-green-500 mr-2" />
+                Ampliar Posición
+              </h3>
+              <button 
+                onClick={() => setShowIncreaseModal({ show: false, position: null })}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              Ampliar tu posición de {showIncreaseModal.position.coin}
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cantidad ({showIncreaseModal.position.coin})
+                </label>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0.001"
+                  value={modalAmount}
+                  onChange={(e) => setModalAmount(e.target.value)}
+                  placeholder="0.001"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  disabled={modalLoading}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Apalancamiento (1-20x)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  max="20"
+                  value={modalLeverage}
+                  onChange={(e) => setModalLeverage(e.target.value)}
+                  placeholder="5"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  disabled={modalLoading}
+                />
+              </div>
+            </div>
+
+            {increaseModalResult.message && (
+              <div className={`mt-4 p-3 rounded-lg ${increaseModalResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                {increaseModalResult.message}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowIncreaseModal({ show: false, position: null });
+                  setIncreaseModalResult({ success: false, message: '' });
+                  setModalAmount('');
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={modalLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!modalAmount || parseFloat(modalAmount) <= 0) {
+                    setIncreaseModalResult({ success: false, message: 'Por favor ingresa una cantidad válida' });
+                    return;
+                  }
+                  
+                  setModalLoading(true);
+                  setIncreaseModalResult({ success: false, message: '' });
+                  
+                  try {
+                    const result = await handleIncreasePosition(showIncreaseModal.position, parseFloat(modalAmount));
+                    if (result.success) {
+                      setIncreaseModalResult({ success: true, message: `Posición de ${showIncreaseModal.position.coin} ampliada exitosamente` });
+                      setTimeout(() => {
+                        setShowIncreaseModal({ show: false, position: null });
+                        setIncreaseModalResult({ success: false, message: '' });
+                        setModalAmount('');
+                        loadHyperliquidData();
+                      }, 2000);
+                    } else {
+                      setIncreaseModalResult({ success: false, message: result.error || 'Error al ampliar la posición' });
+                    }
+                  } catch (error) {
+                    setIncreaseModalResult({ success: false, message: 'Error de conexión' });
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                disabled={modalLoading || !modalAmount}
+              >
+                {modalLoading ? 'Ampliando...' : 'Ampliar Posición'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Reducir Posición */}
+      {showDecreaseModal.show && showDecreaseModal.position && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Minus className="w-5 h-5 text-orange-500 mr-2" />
+                Reducir Posición
+              </h3>
+              <button 
+                onClick={() => setShowDecreaseModal({ show: false, position: null })}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              Reducir tu posición de {showDecreaseModal.position.coin}
+            </p>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cantidad ({showDecreaseModal.position.coin})
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                min="0.001"
+                value={modalAmount}
+                onChange={(e) => setModalAmount(e.target.value)}
+                placeholder="0.001"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                disabled={modalLoading}
+              />
+            </div>
+
+            {decreaseModalResult.message && (
+              <div className={`mt-4 p-3 rounded-lg ${decreaseModalResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                {decreaseModalResult.message}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowDecreaseModal({ show: false, position: null });
+                  setDecreaseModalResult({ success: false, message: '' });
+                  setModalAmount('');
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={modalLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!modalAmount || parseFloat(modalAmount) <= 0) {
+                    setDecreaseModalResult({ success: false, message: 'Por favor ingresa una cantidad válida' });
+                    return;
+                  }
+                  
+                  setModalLoading(true);
+                  setDecreaseModalResult({ success: false, message: '' });
+                  
+                  try {
+                    const result = await handleDecreasePosition(showDecreaseModal.position, parseFloat(modalAmount));
+                    if (result.success) {
+                      setDecreaseModalResult({ success: true, message: `Posición de ${showDecreaseModal.position.coin} reducida exitosamente` });
+                      setTimeout(() => {
+                        setShowDecreaseModal({ show: false, position: null });
+                        setDecreaseModalResult({ success: false, message: '' });
+                        setModalAmount('');
+                        loadHyperliquidData();
+                      }, 2000);
+                    } else {
+                      setDecreaseModalResult({ success: false, message: result.error || 'Error al reducir la posición' });
+                    }
+                  } catch (error) {
+                    setDecreaseModalResult({ success: false, message: 'Error de conexión' });
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                disabled={modalLoading || !modalAmount}
+              >
+                {modalLoading ? 'Reduciendo...' : 'Reducir Posición'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cancelar Orden */}
+      {showCancelOrderModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <X className="w-5 h-5 text-red-500 mr-2" />
+                Cancelar Orden
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowCancelOrderModal({ show: false, orderId: '', coin: '' });
+                  setCancelOrderModalResult({ success: false, message: '' });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-4">
+              ¿Estás seguro de que quieres cancelar tu orden de {showCancelOrderModal.coin}?
+            </p>
+            
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
+              <div className="text-sm text-gray-600">
+                <div className="flex justify-between mb-1">
+                  <span>Moneda:</span>
+                  <span className="font-mono">{showCancelOrderModal.coin}</span>
+                </div>
+                <div className="flex justify-between mb-1">
+                  <span>Order ID:</span>
+                  <span className="font-mono text-xs">{showCancelOrderModal.orderId}</span>
+                </div>
+              </div>
+            </div>
+
+            {cancelOrderModalResult.message && (
+              <div className={`mb-4 p-3 rounded-lg ${cancelOrderModalResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                {cancelOrderModalResult.message}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCancelOrderModal({ show: false, orderId: '', coin: '' });
+                  setCancelOrderModalResult({ success: false, message: '' });
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={modalLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  setModalLoading(true);
+                  setCancelOrderModalResult({ success: false, message: '' });
+                  
+                  try {
+                    const result = await handleCancelOrder(showCancelOrderModal.orderId, showCancelOrderModal.coin);
+                    if (result.success) {
+                      setCancelOrderModalResult({ success: true, message: `Orden de ${showCancelOrderModal.coin} cancelada exitosamente` });
+                      setTimeout(() => {
+                        setShowCancelOrderModal({ show: false, orderId: '', coin: '' });
+                        setCancelOrderModalResult({ success: false, message: '' });
+                        loadHyperliquidData();
+                      }, 2000);
+                    } else {
+                      setCancelOrderModalResult({ success: false, message: result.error || 'Error al cancelar la orden' });
+                    }
+                  } catch (error) {
+                    setCancelOrderModalResult({ success: false, message: 'Error de conexión' });
+                  } finally {
+                    setModalLoading(false);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                disabled={modalLoading}
+              >
+                {modalLoading ? 'Cancelando...' : 'Sí, Cancelar Orden'}
+              </button>
+            </div>
           </div>
         </div>
       )}
