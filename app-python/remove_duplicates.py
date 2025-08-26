@@ -24,7 +24,7 @@ def main():
     print(f"📈 Registros antes: {dataset['row_count']}")
     
     # Conectar a la base de datos
-    db_path = "backtesting.db"
+    db_path = "backend/data/backtesting.db"
     conn = sqlite3.connect(db_path)
     
     try:

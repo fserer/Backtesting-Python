@@ -8,7 +8,7 @@ import os
 logger = logging.getLogger(__name__)
 
 class SQLiteClient:
-    def __init__(self, db_path: str = "backtesting.db"):
+    def __init__(self, db_path: str = "data/backtesting.db"):
         """Inicializa el cliente SQLite."""
         self.db_path = db_path
         self.init_database()
