@@ -125,8 +125,13 @@ temp/
 # Docker
 .dockerignore
 
-# Database (excepto la base de datos principal)
+# Database files - NO incluir en Git para evitar sobrescribir datos de producción
 backend/data/*.db
+backend/data/*.sqlite
+backend/data/*.sqlite3
+backend/backtesting.db
+backend/data/backtesting.db
+*.db
 *.sqlite
 *.sqlite3
 
