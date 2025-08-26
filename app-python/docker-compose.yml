@@ -12,7 +12,7 @@ services:
       - DATABASE_URL=sqlite:///app/data/backtesting.db
     volumes:
       - ./backend:/app
-      - sqlite_data:/app/data
+      - ./backend/data:/app/data
     networks:
       - backtesting-network
     restart: unless-stopped
@@ -34,8 +34,7 @@ services:
       - backtesting-network
     restart: unless-stopped
 
-volumes:
-  sqlite_data:
+# Volumes eliminados - usando bind mount para datos
 
 networks:
   backtesting-network:

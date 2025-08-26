@@ -13,7 +13,7 @@ services:
       - DATABASE_URL=sqlite:///app/data/backtesting.db
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
     volumes:
-      - ./data:/app/data
+      - ./backend/data:/app/data
     networks:
       - backtesting-network
     restart: unless-stopped
