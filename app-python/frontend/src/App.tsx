@@ -14,6 +14,7 @@ import Register from './components/Register';
 import SaveStrategyModal from './components/SaveStrategyModal';
 import StrategiesPage from './components/StrategiesPage';
 import HyperliquidPage from './components/HyperliquidPage';
+import UserProfilePage from './components/UserProfilePage';
 import Footer from './components/Footer';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
@@ -34,7 +35,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados de estrategias
-  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies' | 'hyperliquid'>('backtesting');
+  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies' | 'hyperliquid' | 'profile'>('backtesting');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSavingStrategy, setIsSavingStrategy] = useState(false);
   const [saveStrategyError, setSaveStrategyError] = useState('');
@@ -231,7 +232,13 @@ function AppContent() {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
-                Bienvenido, {currentUser?.username}
+                Bienvenido,{' '}
+                <button
+                  onClick={() => setCurrentPage('profile')}
+                  className="text-blue-600 hover:text-blue-800 font-medium underline"
+                >
+                  {currentUser?.username}
+                </button>
               </span>
               <button
                 onClick={handleLogout}
@@ -384,6 +391,11 @@ function AppContent() {
           <StrategiesPage 
             currentUserId={currentUser?.id || 0}
           />
+        ) : currentPage === 'profile' ? (
+          <UserProfilePage 
+            username={currentUser?.username || ''}
+            onBack={() => setCurrentPage('backtesting')}
+          />
         ) : (
           <HyperliquidPage />
         )}
@@ -404,6 +416,8 @@ function AppContent() {
         </div>
       </div>
       <Footer />
+      
+
     </div>
   );
 }

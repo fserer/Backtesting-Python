@@ -238,3 +238,17 @@ class HyperliquidSettingsResponse(BaseModel):
     main_wallet: Optional[str]
     hyperliquid_wallet: Optional[str]
     api_secret_key: Optional[str]
+
+# Esquemas para cambio de contraseña
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=6)
+    
+    @validator('new_password')
+    def validate_new_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('La nueva contraseña debe tener al menos 6 caracteres')
+        return v
+
+class ChangePasswordResponse(BaseModel):
+    message: str

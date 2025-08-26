@@ -18,7 +18,14 @@ export default defineConfig({
       '127.0.0.1',
       'backtest.bitcoinrocket.com',
       '.bitcoinrocket.com'
-    ]
+    ],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   build: {
     outDir: 'dist',

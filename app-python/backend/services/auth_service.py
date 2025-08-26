@@ -89,9 +89,60 @@ class AuthService:
         """Verifica una contraseña contra su hash"""
         return pwd_context.verify(plain_password, hashed_password)
     
+    def verify_current_password(self, user_id: int, plain_password: str) -> bool:
+        """Verifica la contraseña actual de un usuario"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT hashed_password
+                FROM users 
+                WHERE id = ? AND is_active = 1
+            """, (user_id,))
+            
+            user_data = cursor.fetchone()
+            conn.close()
+            
+            if not user_data:
+                return False
+            
+            hashed_password = user_data[0]
+            return self.verify_password(plain_password, hashed_password)
+            
+        except Exception as e:
+            logger.error(f"Error verificando contraseña actual: {e}")
+            return False
+    
     def get_password_hash(self, password: str) -> str:
         """Genera el hash de una contraseña"""
         return pwd_context.hash(password)
+    
+    def change_password(self, user_id: int, new_password: str) -> bool:
+        """Cambia la contraseña de un usuario"""
+        try:
+            hashed_password = self.get_password_hash(new_password)
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE users 
+                SET hashed_password = ? 
+                WHERE id = ? AND is_active = 1
+            """, (hashed_password, user_id))
+            
+            if cursor.rowcount == 0:
+                conn.close()
+                return False
+            
+            conn.commit()
+            conn.close()
+            
+            logger.info(f"Contraseña cambiada exitosamente para usuario {user_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error cambiando contraseña: {e}")
+            return False
     
     def _encrypt_api_secret_key(self, api_secret_key: str) -> str:
         """Cifra la API Secret Key usando Fernet"""

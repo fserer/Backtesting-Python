@@ -626,6 +626,45 @@ async def get_hyperliquid_settings(
         logger.error(f"Error obteniendo configuración de Hyperliquid: {str(e)}")
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
+# Endpoint para cambiar contraseña
+@app.post("/api/auth/change-password")
+async def change_password(
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Cambia la contraseña del usuario actual.
+    """
+    try:
+        logger.info(f"Iniciando cambio de contraseña para usuario {current_user['id']}")
+        logger.info(f"Usuario actual: {current_user}")
+        
+        # Verificar contraseña actual
+        logger.info("Verificando contraseña actual...")
+        if not auth_service.verify_current_password(current_user["id"], current_password):
+            logger.warning(f"Contraseña actual incorrecta para usuario {current_user['id']}")
+            raise HTTPException(status_code=400, detail="Contraseña actual incorrecta")
+        
+        logger.info("Contraseña actual verificada correctamente")
+        
+        # Cambiar contraseña
+        logger.info("Cambiando contraseña...")
+        success = auth_service.change_password(current_user["id"], new_password)
+        
+        if not success:
+            logger.error(f"Error cambiando contraseña para usuario {current_user['id']}")
+            raise HTTPException(status_code=500, detail="Error cambiando contraseña")
+        
+        logger.info(f"Contraseña cambiada exitosamente para usuario {current_user['id']}")
+        return {"message": "Contraseña cambiada exitosamente"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cambiando contraseña: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
 # Endpoints de Trading de Hyperliquid
 @app.get("/api/hyperliquid/positions")
 async def get_hyperliquid_positions(
