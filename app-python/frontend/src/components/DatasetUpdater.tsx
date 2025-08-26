@@ -25,10 +25,12 @@ const DatasetUpdater: React.FC = () => {
     setUpdateResults([]);
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/datasets/update-all`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
         },
       });
 
@@ -39,6 +41,9 @@ const DatasetUpdater: React.FC = () => {
       const data: UpdateAllResponse = await response.json();
       
       console.log('Respuesta del backend:', data);
+      console.log('data.results:', data.results);
+      console.log('typeof data.results:', typeof data.results);
+      console.log('Object.keys(data.results):', Object.keys(data.results));
       
       // Convertir resultados a array para facilitar el renderizado
       const resultsArray = Object.entries(data.results).map(([datasetName, result]) => ({
