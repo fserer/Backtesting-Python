@@ -10,6 +10,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
 import logging
+from cryptography.fernet import Fernet
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,18 @@ ACCESS_TOKEN_EXPIRE_DAYS = 365  # 1 año
 
 # Contexto para hash de contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Clave de cifrado para API Secret Keys (usar la misma SECRET_KEY como base)
+def get_encryption_key():
+    """Genera una clave de cifrado basada en SECRET_KEY"""
+    # Usar SECRET_KEY como base y generar una clave de 32 bytes para Fernet
+    key_base = SECRET_KEY.encode()
+    # Asegurar que tenga exactamente 32 bytes
+    key = base64.urlsafe_b64encode(key_base[:32].ljust(32, b'0'))
+    return key
+
+# Inicializar Fernet para cifrado
+fernet = Fernet(get_encryption_key())
 
 class AuthService:
     def __init__(self, db_path: str = "data/backtesting.db"):
@@ -78,6 +92,24 @@ class AuthService:
     def get_password_hash(self, password: str) -> str:
         """Genera el hash de una contraseña"""
         return pwd_context.hash(password)
+    
+    def _encrypt_api_secret_key(self, api_secret_key: str) -> str:
+        """Cifra la API Secret Key usando Fernet"""
+        try:
+            encrypted = fernet.encrypt(api_secret_key.encode())
+            return encrypted.decode()
+        except Exception as e:
+            logger.error(f"Error cifrando API Secret Key: {e}")
+            raise
+    
+    def _decrypt_api_secret_key(self, encrypted_api_secret_key: str) -> str:
+        """Descifra la API Secret Key usando Fernet"""
+        try:
+            decrypted = fernet.decrypt(encrypted_api_secret_key.encode())
+            return decrypted.decode()
+        except Exception as e:
+            logger.error(f"Error descifrando API Secret Key: {e}")
+            raise
     
     def create_user(self, username: str, password: str, email: Optional[str] = None) -> Dict[str, Any]:
         """Crea un nuevo usuario"""
@@ -253,6 +285,9 @@ class AuthService:
     def update_hyperliquid_settings(self, user_id: int, main_wallet: str, hyperliquid_wallet: str, api_secret_key: str) -> bool:
         """Actualiza la configuración de Hyperliquid de un usuario"""
         try:
+            # Cifrar la API Secret Key antes de almacenarla
+            encrypted_api_secret_key = self._encrypt_api_secret_key(api_secret_key)
+            
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
@@ -260,7 +295,7 @@ class AuthService:
                 UPDATE users 
                 SET main_wallet = ?, hyperliquid_wallet = ?, api_secret_key = ?
                 WHERE id = ?
-            """, (main_wallet, hyperliquid_wallet, api_secret_key, user_id))
+            """, (main_wallet, hyperliquid_wallet, encrypted_api_secret_key, user_id))
             
             conn.commit()
             conn.close()
@@ -289,7 +324,18 @@ class AuthService:
             if not user_data:
                 return None
             
-            main_wallet, hyperliquid_wallet, api_secret_key = user_data
+            main_wallet, hyperliquid_wallet, encrypted_api_secret_key = user_data
+            
+            # Descifrar la API Secret Key si existe
+            api_secret_key = None
+            if encrypted_api_secret_key:
+                try:
+                    api_secret_key = self._decrypt_api_secret_key(encrypted_api_secret_key)
+                except Exception as e:
+                    logger.error(f"Error descifrando API Secret Key para usuario {user_id}: {e}")
+                    # Si no se puede descifrar, devolver None para la API Secret Key
+                    api_secret_key = None
+            
             return {
                 "main_wallet": main_wallet,
                 "hyperliquid_wallet": hyperliquid_wallet,
