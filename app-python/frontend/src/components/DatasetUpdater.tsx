@@ -38,12 +38,16 @@ const DatasetUpdater: React.FC = () => {
 
       const data: UpdateAllResponse = await response.json();
       
+      console.log('Respuesta del backend:', data);
+      
       // Convertir resultados a array para facilitar el renderizado
       const resultsArray = Object.entries(data.results).map(([datasetName, result]) => ({
         dataset_name: datasetName,
         ...result
       }));
 
+      console.log('Resultados procesados:', resultsArray);
+      
       setUpdateResults(resultsArray);
       setLastUpdateTime(new Date().toLocaleString('es-ES'));
     } catch (error) {
