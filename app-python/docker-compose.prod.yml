@@ -23,6 +23,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      args:
+        - VITE_API_URL=${VITE_API_URL:-https://backtest.bitcoinrocket.com}
     container_name: backtesting-frontend
     ports:
       - "3000:3000"
