@@ -51,7 +51,9 @@ app.add_middleware(
         "http://localhost:5173", 
         "http://127.0.0.1:5173",
         "http://localhost:3000", 
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        "https://backtest.bitcoinrocket.com",
+        "http://backtest.bitcoinrocket.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -61,6 +63,10 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message": "Backtesting API v1.0.0"}
+
+@app.get("/api/")
+async def api_root():
+    return {"message": "Backtesting API v1.0.0", "endpoints": ["/api/auth", "/api/datasets", "/api/backtest", "/api/hyperliquid"]}
 
 @app.get("/health")
 async def health_check():
