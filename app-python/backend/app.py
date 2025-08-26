@@ -310,12 +310,17 @@ async def update_all_datasets_from_nodecharts():
     Actualiza todos los datasets que tienen mapeo con NodeCharts.
     """
     try:
+        logger.info("🚀 Iniciando actualización de todos los datasets desde NodeCharts")
+        
         # Inicializar servicio de NodeCharts
         api_key = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdG9yZSI6MCwidXNlcmlkIjoyNTUyLCJjcmVhdGlvbnRpbWUiOjE3MTM3Nzc0NTJ9.bFd4Y_134nmvUjboy8CZRkMRc8WngTA9_zDx18qAkXE"
         nodecharts_service = NodeChartsService(api_key)
         
         # Actualizar todos los datasets
         results = nodecharts_service.update_all_datasets(None)
+        
+        logger.info(f"✅ Actualización completada. Resultados: {len(results)} datasets procesados")
+        logger.info(f"📋 Datasets procesados: {list(results.keys())}")
         
         return {
             "message": "Actualización completada",

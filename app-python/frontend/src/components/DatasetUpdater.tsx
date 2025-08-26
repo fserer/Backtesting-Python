@@ -26,7 +26,13 @@ const DatasetUpdater: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/datasets/update-all`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const fullUrl = `${apiUrl}/api/datasets/update-all`;
+      
+      console.log('🔗 Llamando a URL:', fullUrl);
+      console.log('🔑 Token presente:', !!token);
+      
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,6 +58,8 @@ const DatasetUpdater: React.FC = () => {
       }));
 
       console.log('Resultados procesados:', resultsArray);
+      console.log('📊 Total de datasets procesados:', resultsArray.length);
+      console.log('📋 Datasets procesados:', resultsArray.map(r => r.dataset_name));
       
       setUpdateResults(resultsArray);
       setLastUpdateTime(new Date().toLocaleString('es-ES'));
