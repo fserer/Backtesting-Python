@@ -27,21 +27,29 @@ const DatasetUpdater: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const fullUrl = `${apiUrl}/api/datasets/update-all`;
+      const timestamp = Date.now(); // Evitar caché
+      const fullUrl = `${apiUrl}/api/datasets/update-all?_t=${timestamp}`;
       
       console.log('🔗 Llamando a URL:', fullUrl);
       console.log('🔑 Token presente:', !!token);
+      console.log('🌐 API URL configurada:', apiUrl);
       
       const response = await fetch(fullUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token ? `Bearer ${token}` : '',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
       });
 
+      console.log('📡 Status de respuesta:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta:', errorText);
+        throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
       const data: UpdateAllResponse = await response.json();
