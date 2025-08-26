@@ -12,6 +12,7 @@ services:
       - DEBUG=False
       - DATABASE_URL=sqlite:///app/data/backtesting.db
       - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_here}
+      - SECRET_KEY=${SECRET_KEY:-[<fv,5a6*PS)liZHOe5d[]Ljms>BO=J]-f]6w#u%mPe)tJ5MG^tA4D_|&]hs|P>&}
     volumes:
       - ./backend/data:/app/data
     networks:
