@@ -27,7 +27,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+      - VITE_API_URL=${VITE_API_URL:-https://backtest.bitcoinrocket.com}
     depends_on:
       - backend
     networks:
