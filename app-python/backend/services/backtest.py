@@ -487,6 +487,8 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
         
         # Determinar intervalo del dataset para cálculo de duración
         dataset_interval = determine_dataset_interval(df)
+        logger.info(f"🔍 Dataset interval detectado: {dataset_interval}")
+        logger.info(f"🔍 Frecuencia detectada: {freq}")
         
         # Manejar valores infinitos y NaN
         def safe_float(value):
@@ -510,6 +512,9 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
             'freq': freq,
             'dataset_interval': dataset_interval
         }
+        
+        logger.info(f"🔍 Resultados finales - dataset_interval: {results.get('dataset_interval')}")
+        logger.info(f"🔍 Claves en results: {list(results.keys())}")
         
         return results
         

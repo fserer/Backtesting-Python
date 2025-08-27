@@ -155,6 +155,7 @@ class BacktestResponse(BaseModel):
     equity: List[EquityPoint]
     trades: List[Trade]
     freq: str
+    dataset_interval: Optional[str] = None
 
 # Esquemas para estrategias guardadas
 class SaveStrategyRequest(BaseModel):
