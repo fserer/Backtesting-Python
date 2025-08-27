@@ -118,6 +118,7 @@ export interface BacktestResponse {
   equity: EquityPoint[];
   trades: Trade[];
   freq: string;
+  dataset_interval?: string;
 }
 
 export class ApiClient {

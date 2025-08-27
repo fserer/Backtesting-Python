@@ -184,6 +184,35 @@ def determine_frequency(df: pd.DataFrame, override_freq: Optional[str] = None) -
     else:
         return '1H'  # Default
 
+def determine_dataset_interval(df: pd.DataFrame) -> str:
+    """
+    Determina el intervalo del dataset para cálculo de duración.
+    """
+    # Calcular diferencias de tiempo
+    time_diffs = df['t'].diff().dropna()
+    time_diffs_seconds = time_diffs.dt.total_seconds()
+    
+    if len(time_diffs_seconds) == 0:
+        return 'hour'
+    
+    # Calcular el delta modal
+    mode_diff = time_diffs_seconds.mode().iloc[0]
+    
+    # Definir rangos de tolerancia (±5%)
+    daily_range = (86400 * 0.95, 86400 * 1.05)  # ~24 horas
+    hourly_range = (3600 * 0.95, 3600 * 1.05)   # ~1 hora
+    block_range = (600 * 0.95, 600 * 1.05)      # ~10 minutos (bloque Bitcoin)
+    
+    if daily_range[0] <= mode_diff <= daily_range[1]:
+        return 'day'
+    elif hourly_range[0] <= mode_diff <= hourly_range[1]:
+        return 'hour'
+    elif block_range[0] <= mode_diff <= block_range[1]:
+        return 'block'
+    else:
+        # Si no coincide con ningún patrón conocido, usar el valor en segundos
+        return f'{int(mode_diff)}s'
+
 def generate_signals(
     df: pd.DataFrame, 
     threshold_entry: float, 
@@ -456,6 +485,9 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
         # Determinar frecuencia para respuesta
         freq = determine_frequency(df)
         
+        # Determinar intervalo del dataset para cálculo de duración
+        dataset_interval = determine_dataset_interval(df)
+        
         # Manejar valores infinitos y NaN
         def safe_float(value):
             if pd.isna(value) or np.isinf(value):
@@ -475,7 +507,8 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
             'funding_cost': {
                 'totalFundingCost': total_funding_cost
             },
-            'freq': freq
+            'freq': freq,
+            'dataset_interval': dataset_interval
         }
         
         return results

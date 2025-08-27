@@ -333,7 +333,10 @@ function AppContent() {
 
             {/* Tabla de Operaciones - Ancho completo */}
             <div className="mt-8">
-              <TradesTable trades={backtestResult?.trades || []} />
+              <TradesTable 
+                trades={backtestResult?.trades || []} 
+                datasetInterval={backtestResult?.dataset_interval}
+              />
             </div>
 
             {/* Coste de Funding - Ancho completo */}

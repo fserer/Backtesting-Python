@@ -5,9 +5,10 @@ import { Trade } from '../lib/api';
 
 interface TradesTableProps {
   trades?: Trade[];
+  datasetInterval?: string;
 }
 
-export function TradesTable({ trades }: TradesTableProps) {
+export function TradesTable({ trades, datasetInterval }: TradesTableProps) {
   if (!trades || trades.length === 0) {
     return (
       <Card>
@@ -51,12 +52,81 @@ export function TradesTable({ trades }: TradesTableProps) {
   };
 
   const formatDuration = (duration: number) => {
-    if (duration < 24) {
-      return `${duration}h`;
-    } else {
-      const days = Math.floor(duration / 24);
-      const hours = duration % 24;
-      return `${days}d ${hours}h`;
+    // Si no tenemos información del intervalo, usar el formato original
+    if (!datasetInterval) {
+      if (duration < 24) {
+        return `${duration}h`;
+      } else {
+        const days = Math.floor(duration / 24);
+        const hours = duration % 24;
+        return `${days}d ${hours}h`;
+      }
+    }
+
+    // Calcular duración según el intervalo del dataset
+    switch (datasetInterval) {
+      case 'day':
+        // Cada período = 1 día
+        if (duration < 7) {
+          return `${duration}d`;
+        } else {
+          const weeks = Math.floor(duration / 7);
+          const days = duration % 7;
+          return weeks > 0 ? `${weeks}w ${days}d` : `${days}d`;
+        }
+      
+      case 'hour':
+        // Cada período = 1 hora
+        if (duration < 24) {
+          return `${duration}h`;
+        } else {
+          const days = Math.floor(duration / 24);
+          const hours = duration % 24;
+          return `${days}d ${hours}h`;
+        }
+      
+      case 'block':
+        // Cada período = 10 minutos (bloque Bitcoin)
+        const totalMinutes = duration * 10;
+        if (totalMinutes < 60) {
+          return `${totalMinutes}m`;
+        } else if (totalMinutes < 1440) { // menos de 24 horas
+          const hours = Math.floor(totalMinutes / 60);
+          const minutes = totalMinutes % 60;
+          return `${hours}h ${minutes}m`;
+        } else {
+          const days = Math.floor(totalMinutes / 1440);
+          const hours = Math.floor((totalMinutes % 1440) / 60);
+          const minutes = totalMinutes % 60;
+          return `${days}d ${hours}h ${minutes}m`;
+        }
+      
+      default:
+        // Para otros intervalos (ej: segundos personalizados)
+        if (datasetInterval.endsWith('s')) {
+          const seconds = parseInt(datasetInterval.slice(0, -1));
+          const totalSeconds = duration * seconds;
+          if (totalSeconds < 60) {
+            return `${totalSeconds}s`;
+          } else if (totalSeconds < 3600) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const remainingSeconds = totalSeconds % 60;
+            return `${minutes}m ${remainingSeconds}s`;
+          } else {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+          }
+        }
+        
+        // Fallback al formato original
+        if (duration < 24) {
+          return `${duration}h`;
+        } else {
+          const days = Math.floor(duration / 24);
+          const hours = duration % 24;
+          return `${days}d ${hours}h`;
+        }
     }
   };
 
