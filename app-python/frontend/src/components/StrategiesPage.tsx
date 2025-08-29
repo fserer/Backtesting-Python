@@ -27,6 +27,7 @@ interface Strategy {
     transformations: string[];
     thresholds?: { entry: number; exit: number };
     crossover_details: string;
+    bitcoin_condition: string;
     apply_to: string;
     raw_configuration: any;
   };
@@ -327,6 +328,12 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                                       <div>
                                         <p><strong>Detalles de cruce:</strong></p>
                                         <p className="ml-2">{strategy.formatted_config.crossover_details}</p>
+                                      </div>
+                                    )}
+                                    {strategy.formatted_config.bitcoin_condition && (
+                                      <div>
+                                        <p><strong>Condiciones de Bitcoin:</strong></p>
+                                        <p className="ml-2 text-blue-600">{strategy.formatted_config.bitcoin_condition}</p>
                                       </div>
                                     )}
                                   </div>

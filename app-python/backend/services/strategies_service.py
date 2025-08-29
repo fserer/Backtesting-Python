@@ -334,7 +334,8 @@ class StrategiesService:
                 "exit": configuration.get('threshold_exit')
             },
             "crossover_strategy": configuration.get('crossover_strategy'),
-            "multi_dataset_crossover_strategy": configuration.get('multi_dataset_crossover_strategy')
+            "multi_dataset_crossover_strategy": configuration.get('multi_dataset_crossover_strategy'),
+            "bitcoin_price_condition": configuration.get('bitcoin_price_condition')
         }
         return detailed_config
     
@@ -359,6 +360,16 @@ class StrategiesService:
             if crossover:
                 crossover_text = f"Entrada: {crossover.get('entry_type', '').upper()} {crossover.get('entry_fast_period', '')}/{crossover.get('entry_slow_period', '')} | Salida: {crossover.get('exit_type', '').upper()} {crossover.get('exit_fast_period', '')}/{crossover.get('exit_slow_period', '')}"
         
+        # Formatear condiciones de precio de Bitcoin
+        bitcoin_condition_text = ""
+        bitcoin_condition = detailed_config.get('bitcoin_price_condition', {})
+        if bitcoin_condition and bitcoin_condition.get('enabled', False):
+            ma_type = bitcoin_condition.get('ma_type', 'sma').upper()
+            ma_period = bitcoin_condition.get('ma_period', 0)
+            condition = bitcoin_condition.get('condition', 'above')
+            condition_text = "por encima" if condition == 'above' else "por debajo"
+            bitcoin_condition_text = f"Bitcoin {condition_text} de {ma_type}({ma_period})"
+        
         return {
             "dataset_name": detailed_config.get('dataset', {}).get('name'),
             "strategy_description": detailed_config.get('strategy_type', {}).get('description'),
@@ -368,6 +379,7 @@ class StrategiesService:
             "transformations": transform_text,
             "thresholds": detailed_config.get('thresholds'),
             "crossover_details": crossover_text,
+            "bitcoin_condition": bitcoin_condition_text,
             "apply_to": detailed_config.get('apply_to'),
             "raw_configuration": configuration  # Configuración completa para referencia
         }

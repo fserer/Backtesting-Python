@@ -183,6 +183,7 @@ class FormattedConfiguration(BaseModel):
     transformations: List[str]
     thresholds: Optional[Dict[str, float]]
     crossover_details: str
+    bitcoin_condition: str
     apply_to: str
     raw_configuration: Dict[str, Any]
 
