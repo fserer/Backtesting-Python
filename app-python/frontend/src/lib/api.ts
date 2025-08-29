@@ -42,6 +42,13 @@ export interface CrossoverStrategy {
   exit_direction: 'up' | 'down';
 }
 
+export interface BitcoinPriceCondition {
+  enabled: boolean;
+  ma_type: 'sma' | 'ema';
+  ma_period: number;
+  condition: 'above' | 'below';  // 'above' = por encima, 'below' = por debajo
+}
+
 export interface MultiDatasetCrossoverStrategy {
   // Dataset 1 (indicador principal)
   dataset1_id: number;
@@ -81,6 +88,7 @@ export interface BacktestRequest {
   threshold_exit: number;
   crossover_strategy?: CrossoverStrategy;
   multi_dataset_crossover_strategy?: MultiDatasetCrossoverStrategy;
+  bitcoin_price_condition: BitcoinPriceCondition;
   period: '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | '2015' | '2016' | '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025' | 'all';
   fees: number;
   slippage: number;

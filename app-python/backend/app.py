@@ -173,6 +173,7 @@ async def run_backtest_endpoint(request: BacktestRequest):
                 fees=request.fees,
                 slippage=request.slippage,
                 init_cash=request.init_cash,
+                bitcoin_price_condition=request.bitcoin_price_condition.dict() if request.bitcoin_price_condition else None,
                 period=request.period
             )
         else:
@@ -189,6 +190,7 @@ async def run_backtest_endpoint(request: BacktestRequest):
                 strategy_type=request.strategy_type,
                 crossover_strategy=request.crossover_strategy.dict() if request.crossover_strategy else None,
                 multi_dataset_crossover_strategy=request.multi_dataset_crossover_strategy.dict() if request.multi_dataset_crossover_strategy else None,
+                bitcoin_price_condition=request.bitcoin_price_condition.dict() if request.bitcoin_price_condition else None,
                 period=request.period
             )
         

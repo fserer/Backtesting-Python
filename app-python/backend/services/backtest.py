@@ -19,6 +19,7 @@ def run_backtest(
     strategy_type: str = "threshold",
     crossover_strategy: dict = None,
     multi_dataset_crossover_strategy: dict = None,
+    bitcoin_price_condition: dict = None,
     period: str = "all"
 ) -> Dict[str, Any]:
     """
@@ -50,7 +51,7 @@ def run_backtest(
         freq = determine_frequency(df_filtered, override_freq)
         
         # Generar señales
-        signals = generate_signals(df_filtered, threshold_entry, threshold_exit, apply_to, strategy_type, crossover_strategy, multi_dataset_crossover_strategy)
+        signals = generate_signals(df_filtered, threshold_entry, threshold_exit, apply_to, strategy_type, crossover_strategy, multi_dataset_crossover_strategy, bitcoin_price_condition)
         
         # Preparar datos para vectorbt
         close_prices = df_filtered['usd_transformed'].values
@@ -220,7 +221,8 @@ def generate_signals(
     apply_to: str,
     strategy_type: str = "threshold",
     crossover_strategy: dict = None,
-    multi_dataset_crossover_strategy: dict = None
+    multi_dataset_crossover_strategy: dict = None,
+    bitcoin_price_condition: dict = None
 ) -> pd.DataFrame:
     """
     Genera señales de entrada y salida basadas en diferentes estrategias.
@@ -238,14 +240,25 @@ def generate_signals(
         DataFrame con columnas 'entries' y 'exits'
     """
     try:
+        # Generar señales base según el tipo de estrategia
         if strategy_type == "threshold":
-            return generate_threshold_signals(df, threshold_entry, threshold_exit, apply_to)
+            signals = generate_threshold_signals(df, threshold_entry, threshold_exit, apply_to)
         elif strategy_type == "crossover" and crossover_strategy:
-            return generate_crossover_signals(df, apply_to, crossover_strategy)
+            signals = generate_crossover_signals(df, apply_to, crossover_strategy)
         elif strategy_type == "multi_dataset_crossover" and multi_dataset_crossover_strategy:
-            return generate_multi_dataset_crossover_signals(df, multi_dataset_crossover_strategy)
+            signals = generate_multi_dataset_crossover_signals(df, multi_dataset_crossover_strategy)
         else:
             raise ValueError(f"Estrategia no válida: {strategy_type}")
+        
+        # Aplicar condiciones de precio de Bitcoin si están habilitadas
+        if bitcoin_price_condition and bitcoin_price_condition.get('enabled', False):
+            bitcoin_filter = generate_bitcoin_price_filter(df, bitcoin_price_condition)
+            # Combinar señales con filtro de Bitcoin (AND lógico)
+            signals['entries'] = signals['entries'] & bitcoin_filter
+            signals['exits'] = signals['exits'] & bitcoin_filter
+            logger.info(f"Condiciones de Bitcoin aplicadas: {bitcoin_filter.sum()} períodos cumplen la condición")
+        
+        return signals
         
     except Exception as e:
         logger.error(f"Error generando señales: {str(e)}")
@@ -616,6 +629,7 @@ def run_multi_dataset_backtest(
     fees: float,
     slippage: float,
     init_cash: float,
+    bitcoin_price_condition: dict = None,
     period: str = "all"
 ) -> Dict[str, Any]:
     """
@@ -652,6 +666,14 @@ def run_multi_dataset_backtest(
         signals = generate_multi_dataset_crossover_signals_impl(
             df1_filtered, df2_filtered, price_df_filtered, strategy
         )
+        
+        # Aplicar condiciones de precio de Bitcoin si están habilitadas
+        if bitcoin_price_condition and bitcoin_price_condition.get('enabled', False):
+            bitcoin_filter = generate_bitcoin_price_filter(price_df_filtered, bitcoin_price_condition)
+            # Combinar señales con filtro de Bitcoin (AND lógico)
+            signals['entries'] = signals['entries'] & bitcoin_filter
+            signals['exits'] = signals['exits'] & bitcoin_filter
+            logger.info(f"Condiciones de Bitcoin aplicadas en multi-dataset: {bitcoin_filter.sum()} períodos cumplen la condición")
         
         # Alinear todos los arrays al mismo tamaño (usar el más pequeño)
         min_length = min(len(price_df_filtered), len(signals))
@@ -869,6 +891,51 @@ def apply_take_profit_stop_loss(
         
     except Exception as e:
         logger.error(f"Error aplicando TP/SL: {str(e)}")
+        raise e
+
+def generate_bitcoin_price_filter(df: pd.DataFrame, bitcoin_price_condition: dict) -> pd.Series:
+    """
+    Genera un filtro basado en las condiciones de precio de Bitcoin.
+    
+    Args:
+        df: DataFrame con datos transformados (incluye 'usd_transformed' que es el precio de Bitcoin)
+        bitcoin_price_condition: Configuración de las condiciones de Bitcoin
+        
+    Returns:
+        Serie booleana indicando qué períodos cumplen la condición
+    """
+    try:
+        # Obtener el precio de Bitcoin (columna 'usd_transformed')
+        bitcoin_prices = df['usd_transformed']
+        
+        # Configuración de la condición
+        ma_type = bitcoin_price_condition.get('ma_type', 'sma')
+        ma_period = bitcoin_price_condition.get('ma_period', 50)
+        condition = bitcoin_price_condition.get('condition', 'above')
+        
+        # Calcular media móvil
+        if ma_type == 'sma':
+            moving_average = bitcoin_prices.rolling(window=ma_period, min_periods=1).mean()
+        else:  # ema
+            moving_average = bitcoin_prices.ewm(span=ma_period).mean()
+        
+        # Aplicar condición
+        if condition == 'above':
+            # Precio actual > Media móvil
+            filter_condition = bitcoin_prices > moving_average
+        else:  # below
+            # Precio actual < Media móvil
+            filter_condition = bitcoin_prices < moving_average
+        
+        # Rellenar NaN con False
+        filter_condition = filter_condition.fillna(False)
+        
+        logger.info(f"Filtro de Bitcoin generado: {filter_condition.sum()} períodos cumplen la condición {condition} de {ma_type.upper()}({ma_period})")
+        
+        return filter_condition
+        
+    except Exception as e:
+        logger.error(f"Error generando filtro de Bitcoin: {str(e)}")
         raise e
 
 

@@ -4,8 +4,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
-import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy } from '../lib/api';
+import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown, Bitcoin } from 'lucide-react';
+import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy, BitcoinPriceCondition } from '../lib/api';
 import { API_BASE_URL } from '../config';
 import { MultiDatasetSelector } from './MultiDatasetSelector';
 
@@ -52,6 +52,12 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       stop_loss_pct: 1.0,
       use_take_profit: true,
       use_stop_loss: true
+    },
+    bitcoin_price_condition: {
+      enabled: false,
+      ma_type: 'sma' as 'sma' | 'ema',
+      ma_period: 50,
+      condition: 'above' as 'above' | 'below'
     },
     period: '1y' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | '2015' | '2016' | '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025' | 'all',
     fees: 0.00045,
@@ -190,6 +196,16 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       ...prev,
       multi_dataset_crossover_strategy: {
         ...prev.multi_dataset_crossover_strategy,
+        [field]: value
+      }
+    }));
+  };
+
+  const updateBitcoinPriceCondition = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      bitcoin_price_condition: {
+        ...prev.bitcoin_price_condition,
         [field]: value
       }
     }));
@@ -640,6 +656,77 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
               onStrategyChange={updateMultiDatasetStrategy}
             />
           )}
+
+          {/* Condiciones de precio de Bitcoin */}
+          <div className="space-y-3">
+            <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Bitcoin className="h-4 w-4" />
+              Condiciones de precio de Bitcoin
+            </h5>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="bitcoin-condition-enabled"
+                  checked={formData.bitcoin_price_condition.enabled}
+                  onChange={(e) => updateBitcoinPriceCondition('enabled', e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="bitcoin-condition-enabled" className="text-sm">
+                  Activar condiciones de precio de Bitcoin
+                </Label>
+              </div>
+              
+              {formData.bitcoin_price_condition.enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="space-y-2">
+                    <Label htmlFor="bitcoin-ma-type" className="text-sm font-medium">Tipo de Media</Label>
+                    <Select
+                      value={formData.bitcoin_price_condition.ma_type}
+                      onValueChange={(value) => updateBitcoinPriceCondition('ma_type', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sma">SMA (Simple)</SelectItem>
+                        <SelectItem value="ema">EMA (Exponencial)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bitcoin-ma-period" className="text-sm font-medium">Períodos</Label>
+                    <Input
+                      id="bitcoin-ma-period"
+                      type="number"
+                      min="1"
+                      max="10000"
+                      value={formData.bitcoin_price_condition.ma_period}
+                      onChange={(e) => updateBitcoinPriceCondition('ma_period', parseInt(e.target.value) || 50)}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bitcoin-condition" className="text-sm font-medium">Condición</Label>
+                    <Select
+                      value={formData.bitcoin_price_condition.condition}
+                      onValueChange={(value) => updateBitcoinPriceCondition('condition', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="above">Por encima</SelectItem>
+                        <SelectItem value="below">Por debajo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Comisiones y Slippage */}
           <div className="space-y-3">

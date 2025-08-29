@@ -16,6 +16,12 @@ class CrossoverStrategy(BaseModel):
     entry_direction: Literal["up", "down"] = "up"  # "up" = cruce al alza, "down" = cruce a la baja
     exit_direction: Literal["up", "down"] = "down"  # "up" = cruce al alza, "down" = cruce a la baja
 
+class BitcoinPriceCondition(BaseModel):
+    enabled: bool = False
+    ma_type: Literal["sma", "ema"] = "sma"
+    ma_period: int = Field(50, ge=1, le=10000)
+    condition: Literal["above", "below"] = "above"  # "above" = por encima, "below" = por debajo
+
 class MultiDatasetCrossoverStrategy(BaseModel):
     # Dataset 1 (indicador principal)
     dataset1_id: int
@@ -55,6 +61,7 @@ class BacktestRequest(BaseModel):
     threshold_exit: float = 0.0
     crossover_strategy: Optional[CrossoverStrategy] = None
     multi_dataset_crossover_strategy: Optional[MultiDatasetCrossoverStrategy] = None
+    bitcoin_price_condition: BitcoinPriceCondition = Field(default_factory=lambda: BitcoinPriceCondition())
     period: Literal[
         "1w", "1m", "3m", "6m", "1y", "ytd", 
         "2y", "3y", "4y", "5y", "6y", "7y", "8y", "9y", "10y",
