@@ -181,7 +181,7 @@ export function MultiDatasetSelector({
                 <Input
                   type="number"
                   min="1"
-                  max="1000"
+                  max="10000"
                   value={strategy.dataset1_ma_period}
                   onChange={(e) => onStrategyChange('dataset1_ma_period', parseInt(e.target.value))}
                 />
@@ -232,7 +232,7 @@ export function MultiDatasetSelector({
                 <Input
                   type="number"
                   min="1"
-                  max="1000"
+                  max="10000"
                   value={strategy.dataset2_ma_period}
                   onChange={(e) => onStrategyChange('dataset2_ma_period', parseInt(e.target.value))}
                 />

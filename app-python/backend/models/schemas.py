@@ -4,13 +4,13 @@ from datetime import datetime
 
 class TransformConfig(BaseModel):
     type: Literal["none", "sma", "ema", "median"] = "none"
-    period: int = Field(1, ge=1, le=1000)
+    period: int = Field(1, ge=1, le=10000)
 
 class CrossoverStrategy(BaseModel):
-    entry_fast_period: int = Field(7, ge=1, le=1000)
-    entry_slow_period: int = Field(30, ge=1, le=1000)
-    exit_fast_period: int = Field(7, ge=1, le=1000)
-    exit_slow_period: int = Field(14, ge=1, le=1000)
+    entry_fast_period: int = Field(7, ge=1, le=10000)
+    entry_slow_period: int = Field(30, ge=1, le=10000)
+    exit_fast_period: int = Field(7, ge=1, le=10000)
+    exit_slow_period: int = Field(14, ge=1, le=10000)
     entry_type: Literal["sma", "ema"] = "sma"
     exit_type: Literal["sma", "ema"] = "sma"
     entry_direction: Literal["up", "down"] = "up"  # "up" = cruce al alza, "down" = cruce a la baja
@@ -21,13 +21,13 @@ class MultiDatasetCrossoverStrategy(BaseModel):
     dataset1_id: int
     dataset1_indicator: Literal["v", "usd"] = "v"
     dataset1_ma_type: Literal["sma", "ema"] = "sma"
-    dataset1_ma_period: int = Field(7, ge=1, le=1000)
+    dataset1_ma_period: int = Field(7, ge=1, le=10000)
     
     # Dataset 2 (indicador secundario)
     dataset2_id: int
     dataset2_indicator: Literal["v", "usd"] = "v"
     dataset2_ma_type: Literal["sma", "ema"] = "sma"
-    dataset2_ma_period: int = Field(30, ge=1, le=1000)
+    dataset2_ma_period: int = Field(30, ge=1, le=10000)
     
     # Direcciones de cruce
     entry_direction: Literal["up", "down"] = "up"  # "up" = cruce al alza, "down" = cruce a la baja
