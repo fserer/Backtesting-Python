@@ -93,6 +93,8 @@ export interface BacktestResults {
   sharpe: number;
   max_drawdown: number;
   trades: number;
+  cagr: number;
+  period_duration: string;
 }
 
 export interface EquityPoint {

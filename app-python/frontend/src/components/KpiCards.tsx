@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { TrendingUp, TrendingDown, Activity, DollarSign, Wallet, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, DollarSign, Wallet, Target, Calendar, TrendingUp as TrendingUpIcon } from 'lucide-react';
 import { BacktestResults } from '@/lib/api';
 
 interface KpiCardsProps {
@@ -51,7 +51,32 @@ export function KpiCards({ results, initialCapital }: KpiCardsProps) {
 
   return (
     <div className="grid grid-cols-2 gap-4">
-      {/* Primera fila: Retorno Total y Ratio Sharpe */}
+      {/* Primera fila: PLAZO TOTAL y CAGR */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">PLAZO TOTAL</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {results.period_duration || 'N/A'}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">CAGR</CardTitle>
+          <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className={`text-2xl font-bold ${getValueColor(results.cagr || 0)}`}>
+            {formatPercentage(results.cagr || 0)}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Segunda fila: Retorno Total y Ratio Sharpe */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Retorno Total</CardTitle>

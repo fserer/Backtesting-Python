@@ -149,6 +149,8 @@ class BacktestResults(BaseModel):
     sharpe: float
     max_drawdown: float
     trades: int
+    cagr: float
+    period_duration: str
 
 class BacktestResponse(BaseModel):
     results: BacktestResults

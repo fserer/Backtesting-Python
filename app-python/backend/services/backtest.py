@@ -385,6 +385,39 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
         max_drawdown = portfolio.max_drawdown()
         trades_count = len(portfolio.trades.records_readable)
         
+        # Calcular CAGR y duración del período
+        cagr = 0.0
+        period_duration = "N/A"
+        
+        if len(df) > 1:
+            try:
+                # Calcular duración del período en años
+                start_date = pd.to_datetime(df['t'].iloc[0])
+                end_date = pd.to_datetime(df['t'].iloc[-1])
+                duration_days = (end_date - start_date).total_seconds() / (24 * 3600)
+                duration_years = duration_days / 365.25
+                
+                # Calcular CAGR
+                if duration_years > 0 and total_return > -1:
+                    cagr = ((1 + total_return) ** (1 / duration_years)) - 1
+                
+                # Formatear duración del período
+                if duration_days < 1:
+                    period_duration = "1 día"
+                elif duration_days < 7:
+                    period_duration = f"{int(duration_days)} días"
+                elif duration_days < 30:
+                    period_duration = f"{int(duration_days / 7)} semanas"
+                elif duration_days < 365:
+                    period_duration = f"{int(duration_days / 30)} meses"
+                else:
+                    period_duration = f"{duration_years:.1f} años"
+                    
+            except Exception as e:
+                logger.warning(f"Error calculando CAGR: {str(e)}")
+                cagr = 0.0
+                period_duration = "N/A"
+        
         
         
         # Información detallada de operaciones
@@ -501,7 +534,9 @@ def calculate_metrics(portfolio: vbt.Portfolio, df: pd.DataFrame) -> Dict[str, A
                 'total_return': safe_float(total_return),
                 'sharpe': safe_float(sharpe_ratio),
                 'max_drawdown': safe_float(max_drawdown),
-                'trades': int(trades_count)
+                'trades': int(trades_count),
+                'cagr': safe_float(cagr),
+                'period_duration': period_duration
             },
             'equity': equity_data,
             'trades': trades_data,
