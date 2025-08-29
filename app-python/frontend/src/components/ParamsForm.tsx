@@ -226,6 +226,53 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
             </div>
           )}
 
+
+
+          {/* Período de Backtesting */}
+          <div className="space-y-2">
+            <Label htmlFor="period" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Período de Backtesting
+            </Label>
+            <Select
+              value={formData.period}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, period: value as any }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1w">Última Semana</SelectItem>
+                <SelectItem value="1m">Último Mes</SelectItem>
+                <SelectItem value="3m">Último Trimestre</SelectItem>
+                <SelectItem value="6m">Últimos 6 Meses</SelectItem>
+                <SelectItem value="ytd">Este Año (YTD)</SelectItem>
+                <SelectItem value="1y">Último Año</SelectItem>
+                <SelectItem value="2y">Últimos 2 Años</SelectItem>
+                <SelectItem value="3y">Últimos 3 Años</SelectItem>
+                <SelectItem value="4y">Últimos 4 Años</SelectItem>
+                <SelectItem value="5y">Últimos 5 Años</SelectItem>
+                <SelectItem value="6y">Últimos 6 Años</SelectItem>
+                <SelectItem value="7y">Últimos 7 Años</SelectItem>
+                <SelectItem value="8y">Últimos 8 Años</SelectItem>
+                <SelectItem value="9y">Últimos 9 Años</SelectItem>
+                <SelectItem value="10y">Últimos 10 Años</SelectItem>
+                <SelectItem value="2025">Año 2025</SelectItem>
+                <SelectItem value="2024">Año 2024</SelectItem>
+                <SelectItem value="2023">Año 2023</SelectItem>
+                <SelectItem value="2022">Año 2022</SelectItem>
+                <SelectItem value="2021">Año 2021</SelectItem>
+                <SelectItem value="2020">Año 2020</SelectItem>
+                <SelectItem value="2019">Año 2019</SelectItem>
+                <SelectItem value="2018">Año 2018</SelectItem>
+                <SelectItem value="2017">Año 2017</SelectItem>
+                <SelectItem value="2016">Año 2016</SelectItem>
+                <SelectItem value="2015">Año 2015</SelectItem>
+                <SelectItem value="all">Todo el Tiempo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Transformaciones */}
           <div className="space-y-4">
             <h4 className="font-medium">Transformaciones</h4>
@@ -330,50 +377,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
             </Select>
           </div>
 
-          {/* Período de Backtesting */}
-          <div>
-            <Label htmlFor="period" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Período de Backtesting
-            </Label>
-            <Select
-              value={formData.period}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, period: value as any }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1w">Última Semana</SelectItem>
-                <SelectItem value="1m">Último Mes</SelectItem>
-                <SelectItem value="3m">Último Trimestre</SelectItem>
-                <SelectItem value="6m">Últimos 6 Meses</SelectItem>
-                <SelectItem value="ytd">Este Año (YTD)</SelectItem>
-                <SelectItem value="1y">Último Año</SelectItem>
-                <SelectItem value="2y">Últimos 2 Años</SelectItem>
-                <SelectItem value="3y">Últimos 3 Años</SelectItem>
-                <SelectItem value="4y">Últimos 4 Años</SelectItem>
-                <SelectItem value="5y">Últimos 5 Años</SelectItem>
-                <SelectItem value="6y">Últimos 6 Años</SelectItem>
-                <SelectItem value="7y">Últimos 7 Años</SelectItem>
-                <SelectItem value="8y">Últimos 8 Años</SelectItem>
-                <SelectItem value="9y">Últimos 9 Años</SelectItem>
-                <SelectItem value="10y">Últimos 10 Años</SelectItem>
-                <SelectItem value="2025">Año 2025</SelectItem>
-                <SelectItem value="2024">Año 2024</SelectItem>
-                <SelectItem value="2023">Año 2023</SelectItem>
-                <SelectItem value="2022">Año 2022</SelectItem>
-                <SelectItem value="2021">Año 2021</SelectItem>
-                <SelectItem value="2020">Año 2020</SelectItem>
-                <SelectItem value="2019">Año 2019</SelectItem>
-                <SelectItem value="2018">Año 2018</SelectItem>
-                <SelectItem value="2017">Año 2017</SelectItem>
-                <SelectItem value="2016">Año 2016</SelectItem>
-                <SelectItem value="2015">Año 2015</SelectItem>
-                <SelectItem value="all">Todo el Tiempo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
 
           {/* Umbrales - Solo para estrategia threshold */}
           {formData.strategy_type === 'threshold' && (
