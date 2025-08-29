@@ -326,7 +326,7 @@ function AppContent() {
               </div>
               
               {/* Gráfico de Equity - 2 tercios */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 flex">
                 <EquityChart equity={backtestResult?.equity} />
               </div>
             </div>

@@ -11,15 +11,15 @@ interface EquityChartProps {
 export function EquityChart({ equity }: EquityChartProps) {
   if (!equity || equity.length === 0) {
     return (
-      <Card>
+      <Card className="w-full h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
             Curva de Equity
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
+        <CardContent className="flex-1">
+          <div className="h-full min-h-[400px] flex items-center justify-center text-muted-foreground">
             No hay datos disponibles
           </div>
         </CardContent>
@@ -68,15 +68,15 @@ export function EquityChart({ equity }: EquityChartProps) {
   };
 
   return (
-    <Card>
+    <Card className="w-full h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
           Curva de Equity
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-72">
+      <CardContent className="flex-1">
+        <div className="h-full min-h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
