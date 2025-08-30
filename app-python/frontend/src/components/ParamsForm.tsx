@@ -13,9 +13,10 @@ interface ParamsFormProps {
   onSubmit: (params: any) => void;
   isRunning: boolean;
   selectedDataset?: Dataset;
+  onDatasetSelect?: (dataset: Dataset) => void;
 }
 
-export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormProps) {
+export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSelect }: ParamsFormProps) {
   const [formData, setFormData] = React.useState({
     dataset_id: 0,
     transform: {
@@ -221,26 +222,40 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset }: ParamsFormP
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Dataset seleccionado */}
-          {selectedDataset ? (
-            <div className="p-3 border rounded-lg bg-blue-50">
-              <div className="flex items-center gap-2">
-                <Database className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">
-                  Dataset: {selectedDataset.name}
-                </span>
-              </div>
+          {/* Selección de Dataset */}
+          <div className="space-y-2">
+            <Label htmlFor="dataset-select" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Dataset para Backtesting
+            </Label>
+            <Select
+              value={selectedDataset ? selectedDataset.id.toString() : ""}
+              onValueChange={(value) => {
+                if (value && onDatasetSelect) {
+                  const dataset = datasets.find(d => d.id.toString() === value);
+                  if (dataset) {
+                    onDatasetSelect(dataset);
+                  }
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un dataset para hacer backtesting" />
+              </SelectTrigger>
+              <SelectContent>
+                {datasets.map((dataset) => (
+                  <SelectItem key={dataset.id} value={dataset.id.toString()}>
+                    {dataset.name} ({dataset.row_count.toLocaleString()} registros)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedDataset && (
               <p className="text-xs text-blue-600 mt-1">
-                {selectedDataset.row_count.toLocaleString()} registros
+                Dataset seleccionado: {selectedDataset.name} - {selectedDataset.row_count.toLocaleString()} registros
               </p>
-            </div>
-          ) : (
-            <div className="p-3 border rounded-lg bg-yellow-50">
-              <p className="text-sm text-yellow-800">
-                ⚠️ Selecciona un dataset para ejecutar el backtest
-              </p>
-            </div>
-          )}
+            )}
+          </div>
 
 
 

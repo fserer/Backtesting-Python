@@ -15,6 +15,7 @@ import SaveStrategyModal from './components/SaveStrategyModal';
 import StrategiesPage from './components/StrategiesPage';
 import HyperliquidPage from './components/HyperliquidPage';
 import UserProfilePage from './components/UserProfilePage';
+import DatasetsPage from './components/DatasetsPage';
 import Footer from './components/Footer';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
@@ -35,7 +36,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados de estrategias
-  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies' | 'hyperliquid' | 'profile'>('backtesting');
+  const [currentPage, setCurrentPage] = useState<'backtesting' | 'strategies' | 'hyperliquid' | 'datasets' | 'profile'>('backtesting');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [isSavingStrategy, setIsSavingStrategy] = useState(false);
   const [saveStrategyError, setSaveStrategyError] = useState('');
@@ -284,6 +285,16 @@ function AppContent() {
               >
                 Hyperliquid
               </button>
+              <button
+                onClick={() => setCurrentPage('datasets')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  currentPage === 'datasets'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Datasets
+              </button>
             </nav>
           </div>
         </div>
@@ -291,31 +302,14 @@ function AppContent() {
         {/* Contenido de las pestañas */}
         {currentPage === 'backtesting' ? (
           <>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Primer tercio - Datasets y Upload */}
-              <div className="space-y-6">
-                <DatasetManager
-                  onDatasetSelect={setSelectedDataset}
-                  selectedDataset={selectedDataset || undefined}
-                />
-                
-                <DatasetUpdater />
-                
-                <FileUploader
-                  onFileUpload={handleFileUpload}
-                  isUploading={isUploading}
-                  uploadResult={uploadResult || undefined}
-                />
-              </div>
-
-              {/* Segundo y tercer tercio - Parámetros del Backtest */}
-              <div className="lg:col-span-2">
-                <ParamsForm
-                  onSubmit={handleBacktest}
-                  isRunning={isRunning}
-                  selectedDataset={selectedDataset || undefined}
-                />
-              </div>
+            {/* Parámetros del Backtest - 100% ancho */}
+            <div className="mb-8">
+              <ParamsForm
+                onSubmit={handleBacktest}
+                isRunning={isRunning}
+                selectedDataset={selectedDataset || undefined}
+                onDatasetSelect={setSelectedDataset}
+              />
             </div>
 
             {/* Sección inferior - KPIs y Gráfico de Equity */}
@@ -393,6 +387,12 @@ function AppContent() {
         ) : currentPage === 'strategies' ? (
           <StrategiesPage 
             currentUserId={currentUser?.id || 0}
+          />
+        ) : currentPage === 'datasets' ? (
+          <DatasetsPage
+            onFileUpload={handleFileUpload}
+            isUploading={isUploading}
+            uploadResult={uploadResult}
           />
         ) : currentPage === 'profile' ? (
           <UserProfilePage 

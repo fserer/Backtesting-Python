@@ -10,9 +10,10 @@ import { Edit, Trash2, Database, Calendar, Hash } from 'lucide-react';
 interface DatasetManagerProps {
   onDatasetSelect: (dataset: Dataset) => void;
   selectedDataset?: Dataset;
+  showSelectionButton?: boolean;
 }
 
-export function DatasetManager({ onDatasetSelect, selectedDataset }: DatasetManagerProps) {
+export function DatasetManager({ onDatasetSelect, selectedDataset, showSelectionButton = true }: DatasetManagerProps) {
   const [editingDataset, setEditingDataset] = useState<Dataset | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -114,7 +115,10 @@ export function DatasetManager({ onDatasetSelect, selectedDataset }: DatasetMana
           Datasets Disponibles
         </CardTitle>
         <CardDescription>
-          Selecciona un dataset para ejecutar backtests
+          {showSelectionButton 
+            ? "Selecciona un dataset para ejecutar backtests"
+            : "Gestiona y visualiza todos los datasets disponibles"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -192,15 +196,17 @@ export function DatasetManager({ onDatasetSelect, selectedDataset }: DatasetMana
                     
                     {/* Botones de acción */}
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={selectedDataset?.id === dataset.id ? "default" : "outline"}
-                        onClick={() => onDatasetSelect(dataset)}
-                        disabled={selectedDataset?.id === dataset.id}
-                        className="flex-1"
-                      >
-                        {selectedDataset?.id === dataset.id ? 'Seleccionado' : 'Seleccionar'}
-                      </Button>
+                      {showSelectionButton && (
+                        <Button
+                          size="sm"
+                          variant={selectedDataset?.id === dataset.id ? "default" : "outline"}
+                          onClick={() => onDatasetSelect(dataset)}
+                          disabled={selectedDataset?.id === dataset.id}
+                          className="flex-1"
+                        >
+                          {selectedDataset?.id === dataset.id ? 'Seleccionado' : 'Seleccionar'}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
