@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { FileUploader } from './FileUploader';
 import { DatasetManager } from './DatasetManager';
 import DatasetUpdater from './DatasetUpdater';
@@ -25,44 +24,23 @@ const DatasetsPage: React.FC<DatasetsPageProps> = ({ onFileUpload, isUploading, 
         {/* Primer tercio - Subir CSV y Actualización automática */}
         <div className="space-y-6">
           {/* Subir Archivo CSV */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Subir Archivo CSV</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FileUploader
-                onFileUpload={onFileUpload}
-                isUploading={isUploading}
-                uploadResult={uploadResult || undefined}
-              />
-            </CardContent>
-          </Card>
+          <FileUploader
+            onFileUpload={onFileUpload}
+            isUploading={isUploading}
+            uploadResult={uploadResult || undefined}
+          />
 
           {/* Actualización Automática de Datasets */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Actualización Automática</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DatasetUpdater />
-            </CardContent>
-          </Card>
+          <DatasetUpdater />
         </div>
 
         {/* Dos tercios - Listado de Datasets */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Datasets Disponibles</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DatasetManager
-                onDatasetSelect={() => {}} // No necesitamos selección aquí
-                selectedDataset={undefined}
-                showSelectionButton={false} // Ocultar botón de selección
-              />
-            </CardContent>
-          </Card>
+          <DatasetManager
+            onDatasetSelect={() => {}} // No necesitamos selección aquí
+            selectedDataset={undefined}
+            showSelectionButton={false} // Ocultar botón de selección
+          />
         </div>
       </div>
     </div>
