@@ -17,6 +17,8 @@ import HyperliquidPage from './components/HyperliquidPage';
 import UserProfilePage from './components/UserProfilePage';
 import DatasetsPage from './components/DatasetsPage';
 import Footer from './components/Footer';
+import { Header } from './components/Header';
+import { Menu } from './components/Menu';
 import { apiClient, UploadResponse, BacktestResponse, Dataset } from './lib/api';
 
 const queryClient = new QueryClient();
@@ -220,84 +222,18 @@ function AppContent() {
 
   // Mostrar dashboard si está autenticado
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="flex-1">
-        <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">TradeSigma Pro</h1>
-              <p className="text-muted-foreground mt-2">
-                Advanced Backtesting Platform
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                Bienvenido,{' '}
-                <button
-                  onClick={() => setCurrentPage('profile')}
-                  className="text-blue-600 hover:text-blue-800 font-medium underline"
-                >
-                  {currentUser?.username}
-                </button>
-              </span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Pestañas de navegación */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setCurrentPage('backtesting')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  currentPage === 'backtesting'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Backtesting
-              </button>
-              <button
-                onClick={() => setCurrentPage('strategies')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  currentPage === 'strategies'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Estrategias
-              </button>
-              <button
-                onClick={() => setCurrentPage('hyperliquid')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  currentPage === 'hyperliquid'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Hyperliquid
-              </button>
-              <button
-                onClick={() => setCurrentPage('datasets')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  currentPage === 'datasets'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Datasets
-              </button>
-            </nav>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <Header 
+        currentUser={currentUser}
+        onProfileClick={() => setCurrentPage('profile')}
+        onLogout={handleLogout}
+      />
+      <Menu 
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+      />
+      <main className="flex-1 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Contenido de las pestañas */}
         {currentPage === 'backtesting' ? (
@@ -417,10 +353,8 @@ function AppContent() {
           periodDescription={selectedPeriodDescription}
         />
         </div>
-      </div>
+      </main>
       <Footer />
-      
-
     </div>
   );
 }
