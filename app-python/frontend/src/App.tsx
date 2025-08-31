@@ -233,7 +233,7 @@ function AppContent() {
         onPageChange={setCurrentPage}
       />
       <main className="flex-1 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
 
         {/* Contenido de las pestañas */}
         {currentPage === 'backtesting' ? (
