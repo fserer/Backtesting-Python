@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { formatCurrentDateTime } from '../lib/utils';
 
 interface DatasetUpdateResult {
   dataset_name: string;
@@ -70,7 +71,7 @@ const DatasetUpdater: React.FC = () => {
       console.log('📋 Datasets procesados:', resultsArray.map(r => r.dataset_name));
       
       setUpdateResults(resultsArray);
-      setLastUpdateTime(new Date().toLocaleString('es-ES'));
+      setLastUpdateTime(formatCurrentDateTime());
     } catch (error) {
       console.error('Error actualizando datasets:', error);
       setUpdateResults([{

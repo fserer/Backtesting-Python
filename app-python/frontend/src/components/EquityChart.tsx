@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { formatDateOnly } from '../lib/utils';
 import { TrendingUp } from 'lucide-react';
 import { EquityPoint } from '@/lib/api';
 
@@ -30,7 +31,7 @@ export function EquityChart({ equity }: EquityChartProps) {
   // Formatear datos para el gráfico
   const chartData = equity.map(point => ({
     ...point,
-    timestamp: new Date(point.timestamp || '').toLocaleDateString('es-ES'),
+            timestamp: formatDateOnly(point.timestamp || ''),
     equity: Number((point.equity || 0).toFixed(2))
   }));
 

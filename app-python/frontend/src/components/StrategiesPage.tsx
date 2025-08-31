@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Eye, RefreshCw, Trash2, TrendingUp } from 'lucide-react';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, formatDate } from '../lib/utils';
 
 interface Strategy {
   id: number;
@@ -99,14 +99,9 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  // Usar la función de utilidad que maneja la zona horaria correctamente
+  const formatStrategyDate = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const getStrategyTypeLabel = (type: string) => {
@@ -237,7 +232,7 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
                   {strategies.map((strategy) => (
                     <React.Fragment key={strategy.id}>
                       <tr className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-2 text-gray-600">{formatDate(strategy.created_at)}</td>
+                        <td className="py-3 px-2 text-gray-600">{formatStrategyDate(strategy.created_at)}</td>
                         <td className="py-3 px-2">
                           <Badge variant="secondary" className="text-xs">
                             {strategy.username}

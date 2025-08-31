@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Edit, Trash2, Database, Calendar, Hash } from 'lucide-react';
+import { formatDate } from '../lib/utils';
 
 interface DatasetManagerProps {
   onDatasetSelect: (dataset: Dataset) => void;
@@ -76,14 +77,9 @@ export function DatasetManager({ onDatasetSelect, selectedDataset, showSelection
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  // Usar la función de utilidad que maneja la zona horaria correctamente
+  const formatDatasetDate = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   if (isLoading) {
@@ -199,7 +195,7 @@ export function DatasetManager({ onDatasetSelect, selectedDataset, showSelection
                         </span>
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {formatDate(dataset.created_at)}
+                          {formatDatasetDate(dataset.created_at)}
                         </span>
                       </div>
                     </div>

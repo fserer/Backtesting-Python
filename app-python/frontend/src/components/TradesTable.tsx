@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Trade } from '../lib/api';
+import { formatDate } from '../lib/utils';
 
 interface TradesTableProps {
   trades?: Trade[];
@@ -27,15 +28,9 @@ export function TradesTable({ trades, datasetInterval }: TradesTableProps) {
     );
   }
 
-  const formatDate = (dateString: string | null | undefined) => {
+  const formatTradeDate = (dateString: string | null | undefined) => {
     if (!dateString) return '--';
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDate(dateString);
   };
 
   const formatCurrency = (value: number) => {
@@ -167,11 +162,11 @@ export function TradesTable({ trades, datasetInterval }: TradesTableProps) {
               {trades.map((trade, index) => (
                 <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3 px-2 text-gray-600 font-medium">{index + 1}</td>
-                  <td className="py-3 px-2 text-gray-600">{formatDate(trade.entry_date)}</td>
+                  <td className="py-3 px-2 text-gray-600">{formatTradeDate(trade.entry_date)}</td>
                   <td className="py-3 px-2 text-gray-900 font-medium">
                     {formatCurrency(trade.entry_price)}
                   </td>
-                  <td className="py-3 px-2 text-gray-600">{formatDate(trade.exit_date)}</td>
+                  <td className="py-3 px-2 text-gray-600">{formatTradeDate(trade.exit_date)}</td>
                   <td className="py-3 px-2 text-gray-900 font-medium">
                     {formatCurrency(trade.exit_price)}
                   </td>
