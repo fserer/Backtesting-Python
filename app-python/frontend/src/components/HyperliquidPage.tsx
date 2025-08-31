@@ -533,47 +533,43 @@ export default function HyperliquidPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Dashboard de Hyperliquid
-        </h1>
-        <p className="text-gray-600">
-          Visualiza tus posiciones abiertas y balances de monedas en Hyperliquid
-        </p>
+    <div className="max-w-7xl mx-auto p-4 space-y-4">
+      {/* Header con título y botones */}
+      <div className="flex items-center gap-3 mb-4">
+        <TrendingUp className="h-6 w-6 text-blue-600" />
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard de Hyperliquid</h1>
       </div>
 
-      {/* Action Buttons */}
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex gap-4">
+      {/* Subtítulo y botones */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <p className="text-gray-600">Visualiza tus posiciones abiertas y balances de monedas en Hyperliquid</p>
+        <div className="flex items-center gap-3">
           <Button 
-            onClick={handleRefreshData} 
-            disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setShowSettings(true)}
+            variant="outline" 
+            size="sm"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Actualizar Datos
+            <Settings className="h-4 w-4 mr-2" />
+            Configuración
           </Button>
-          
           <Button 
             onClick={handleOpenNewPosition} 
             disabled={loading}
-            className="bg-green-600 hover:bg-green-700"
+            variant="outline" 
+            size="sm"
           >
             <Plus className="h-4 w-4 mr-2" />
             Abrir Nueva Posición
           </Button>
+          <Button 
+            onClick={handleRefreshData} 
+            disabled={loading}
+            size="sm"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Actualizar Datos
+          </Button>
         </div>
-
-        <Button 
-          onClick={() => setShowSettings(true)}
-          variant="outline"
-          className="border-gray-300 hover:bg-gray-50"
-        >
-          <Settings className="h-4 w-4 mr-2" />
-          Configuración
-        </Button>
       </div>
 
       {/* Error Alert */}
@@ -584,23 +580,25 @@ export default function HyperliquidPage() {
         </Alert>
       )}
 
-      {/* Information Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Open Positions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5" />
-              <span>Posiciones Abiertas</span>
-              <Badge variant="secondary">{positions.length}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Tus posiciones abiertas actuales en Hyperliquid
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* Cards de resumen */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Posiciones Abiertas */}
+        <Card className="border border-gray-200">
+          <div className="min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-blue-900 font-semibold">
+              <TrendingUp className="h-5 w-5" />
+              Posiciones Abiertas
+              <Badge variant="secondary" className="ml-2">
+                {positions.length}
+              </Badge>
+            </div>
+          </div>
+          <CardContent className="px-4 py-1">
+            <p className="text-sm text-gray-600 mb-3">Tus posiciones abiertas actuales en Hyperliquid</p>
             {positions.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No hay posiciones abiertas</p>
+              <div className="text-center py-8 text-gray-500">
+                <p>No hay posiciones abiertas</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {positions.map((position, index) => (
@@ -680,21 +678,23 @@ export default function HyperliquidPage() {
           </CardContent>
         </Card>
 
-        {/* Open Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="w-5 h-5" />
-              <span>Órdenes Abiertas</span>
-              <Badge variant="secondary">{openOrders.length}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Tus órdenes limit pendientes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Órdenes Abiertas */}
+        <Card className="border border-gray-200">
+          <div className="min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-orange-900 font-semibold">
+              <Clock className="h-5 w-5" />
+              Órdenes Abiertas
+              <Badge variant="secondary" className="ml-2">
+                {openOrders.length}
+              </Badge>
+            </div>
+          </div>
+          <CardContent className="px-4 py-1">
+            <p className="text-sm text-gray-600 mb-3">Tus órdenes limit pendientes</p>
             {openOrders.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No se encontraron órdenes abiertas</p>
+              <div className="text-center py-8 text-gray-500">
+                <p>No se encontraron órdenes abiertas</p>
+              </div>
             ) : (
               <div className="space-y-4">
                 {openOrders.map((order) => (
@@ -757,43 +757,34 @@ export default function HyperliquidPage() {
           </CardContent>
         </Card>
 
-        {/* Coin Balances */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Coins className="w-5 h-5" />
-              <span>Balances de Monedas</span>
-              <Badge variant="secondary">{balances.length}</Badge>
-            </CardTitle>
-            <CardDescription>
-              Tus balances actuales de monedas en Hyperliquid
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        {/* Balances de Monedas */}
+        <Card className="border border-gray-200">
+          <div className="min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-green-900 font-semibold">
+              <Coins className="h-5 w-5" />
+              Balances de Monedas
+              <Badge variant="secondary" className="ml-2">
+                {balances.length}
+              </Badge>
+            </div>
+          </div>
+          <CardContent className="px-4 py-1">
+            <p className="text-sm text-gray-600 mb-3">Tus balances actuales de monedas en Hyperliquid</p>
             {balances.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No se encontraron balances</p>
+              <div className="text-center py-8 text-gray-500">
+                <p>No se encontraron balances</p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {balances.map((balance, index) => (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-lg">{balance.coin}</span>
-                        <DollarSign className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <span className="font-bold text-green-600">
-                        {formatUSD(balance.usdValue)}
-                      </span>
+                  <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <span className="font-medium">{balance.coin}</span>
+                      <p className="text-xs text-gray-500">Libre: {formatNumber(balance.free, 6)}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Libre:</span>
-                        <span className="ml-2 font-mono">{formatNumber(balance.free, 6)}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Total:</span>
-                        <span className="ml-2 font-mono">{formatNumber(balance.total, 6)}</span>
-                      </div>
+                    <div className="text-right">
+                      <span className="font-bold text-green-600">{formatUSD(balance.usdValue)}</span>
+                      <p className="text-xs text-gray-500">Total: {formatNumber(balance.total, 6)}</p>
                     </div>
                   </div>
                 ))}
@@ -803,19 +794,20 @@ export default function HyperliquidPage() {
         </Card>
       </div>
 
-      {/* Trade History - Full Width */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5" />
-            <span>Historial de Trades</span>
-            <Badge variant="secondary">{trades.length}</Badge>
-          </CardTitle>
-          <CardDescription>
-            Tu actividad de trading reciente en Hyperliquid
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {/* Historial de Trades */}
+      <Card className="border border-gray-200">
+        <div className="min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+          <div className="flex items-center gap-2 text-lg text-purple-900 font-semibold">
+            <Clock className="h-5 w-5" />
+            Historial de Trades
+            <Badge variant="secondary" className="ml-2">
+              {trades.length}
+            </Badge>
+          </div>
+        </div>
+        <CardContent className="px-4 py-1 pb-4">
+          <p className="text-sm text-gray-600 mb-4">Tu actividad de trading reciente en Hyperliquid</p>
+
           {trades.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No se encontraron trades</p>
           ) : (
@@ -940,7 +932,7 @@ export default function HyperliquidPage() {
                     onClick={handleLoadMoreTrades}
                     disabled={loadingMore}
                     variant="outline"
-                    className="w-full"
+                    className="w-full sm:w-auto"
                   >
                     {loadingMore ? (
                       <>
