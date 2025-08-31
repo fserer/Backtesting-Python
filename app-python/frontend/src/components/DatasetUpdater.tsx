@@ -88,43 +88,35 @@ const DatasetUpdater: React.FC = () => {
   const getTotalRowsAdded = () => updateResults.reduce((sum, r) => sum + r.rows_added, 0);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="border border-gray-200">
+      <div className="min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+        <div className="flex items-center gap-2 text-lg text-purple-900 font-semibold">
           <RefreshCw className="h-5 w-5" />
-          Actualización Automática de Datasets
-        </CardTitle>
-        <CardDescription>
-          Actualiza automáticamente todos los datasets desde NodeCharts API
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Button 
-            onClick={updateAllDatasets} 
-            disabled={isUpdating}
-            className="flex items-center gap-2"
-          >
-            {isUpdating ? (
-              <>
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                Actualizando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4" />
-                Actualizar Todos los Datasets
-              </>
-            )}
-          </Button>
-          
-          {lastUpdateTime && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              Última actualización: {lastUpdateTime}
-            </div>
-          )}
+          Actualización de Datasets
         </div>
+      </div>
+      <CardContent className="px-4 py-4 space-y-4">
+        <p className="text-sm text-gray-600 mb-4">
+          Actualiza automáticamente todos los datasets desde NodeCharts API
+        </p>
+        
+        <Button 
+          onClick={updateAllDatasets} 
+          disabled={isUpdating}
+          className="w-full sm:w-auto"
+        >
+          {isUpdating ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Actualizando...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Actualizar Todos los Datasets
+            </>
+          )}
+        </Button>
 
         {updateResults.length > 0 && (
           <div className="space-y-3">

@@ -63,14 +63,14 @@ export function FileUploader({ onFileUpload, isUploading, uploadResult }: FileUp
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="border border-gray-200">
+      <div className="min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+        <div className="flex items-center gap-2 text-lg text-blue-900 font-semibold">
           <Upload className="h-5 w-5" />
           Subir Archivo CSV
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </div>
+      </div>
+      <CardContent className="px-4 py-4">
         {showForm ? (
           <div className="space-y-4">
             <div className="p-4 border rounded-lg bg-gray-50">
@@ -125,8 +125,8 @@ export function FileUploader({ onFileUpload, isUploading, uploadResult }: FileUp
           <div
             {...getRootProps()}
             className={cn(
-              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-              dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
+              "border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors",
+              dragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-gray-400",
               isDragReject && "border-destructive bg-destructive/5",
               isUploading && "opacity-50 cursor-not-allowed"
             )}
@@ -156,18 +156,20 @@ export function FileUploader({ onFileUpload, isUploading, uploadResult }: FileUp
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <FileText className="h-8 w-8 text-muted-foreground" />
+                <FileText className="h-8 w-8 text-gray-400" />
                 <div>
-                  <p className="text-sm font-medium">
-                    Arrastra y suelta tu archivo CSV aquí
+                  <p className="text-gray-600 mb-1">
+                    <strong>Arrastra y suelta tu archivo CSV aquí</strong>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    o haz clic para seleccionar
-                  </p>
+                  <p className="text-sm text-gray-500 mb-2">o haz clic para seleccionar</p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Formato requerido: t, v, usd
-                </p>
+                <p className="text-xs text-gray-400 mb-3">Formato requerido: t, v, usd</p>
+                <label
+                  htmlFor="csv-upload"
+                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors"
+                >
+                  Seleccionar Archivo
+                </label>
               </div>
             )}
           </div>
