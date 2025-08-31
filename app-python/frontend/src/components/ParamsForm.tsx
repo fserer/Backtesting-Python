@@ -219,20 +219,20 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   const selectedDatasetInfo = selectedDataset;
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-8">
+    <div className="max-w-7xl mx-auto p-4">
       <div className="flex items-center gap-3 mb-4">
         <Settings className="h-6 w-6 text-blue-600" />
         <h1 className="text-2xl font-bold text-gray-900">Configuración del Backtest</h1>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-8">
         <Card className="border-blue-100 shadow-sm">
-          <CardHeader className="bg-blue-50/50 min-h-[3rem] flex items-center py-3">
-            <CardTitle className="flex items-center gap-2 text-lg text-blue-900">
+          <div className="bg-blue-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-blue-900 font-semibold">
               <BarChart3 className="h-5 w-5" />
               Parámetros del backtest
-            </CardTitle>
-          </CardHeader>
+            </div>
+          </div>
           <CardContent className="px-4 py-6 space-y-4">
             <div className="space-y-3">
               <div className="space-y-2">
@@ -379,12 +379,12 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
         </Card>
 
         <Card className="border-green-100 shadow-sm">
-          <CardHeader className="bg-green-50/50 min-h-[3rem] flex items-center py-3">
-            <CardTitle className="flex items-center gap-2 text-lg text-green-900">
+          <div className="bg-green-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-green-900 font-semibold">
               <TrendingUp className="h-5 w-5" />
               Transformaciones
-            </CardTitle>
-          </CardHeader>
+            </div>
+          </div>
           <CardContent className="px-4 py-6 space-y-4">
             <div className="grid grid-cols-4 gap-4 relative">
               <div className="space-y-2">
@@ -451,12 +451,12 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
         </Card>
 
         <Card className="border-purple-100 shadow-sm">
-          <CardHeader className="bg-purple-50/50 min-h-[3rem] flex items-center py-3">
-            <CardTitle className="flex items-center gap-2 text-lg text-purple-900">
+          <div className="bg-purple-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-purple-900 font-semibold">
               <Settings className="h-5 w-5" />
               Estrategia de backtesting
-            </CardTitle>
-          </CardHeader>
+            </div>
+          </div>
           <CardContent className="px-4 py-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
