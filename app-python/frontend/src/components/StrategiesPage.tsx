@@ -219,7 +219,7 @@ const StrategiesPage: React.FC<StrategiesPageProps> = ({ currentUserId }) => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto pb-4">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
