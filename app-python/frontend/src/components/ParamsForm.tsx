@@ -4,7 +4,10 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown, Bitcoin } from 'lucide-react';
+import { Checkbox } from './ui/checkbox';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDown, Bitcoin, BarChart3, Search, Target } from 'lucide-react';
 import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy, BitcoinPriceCondition } from '../lib/api';
 import { API_BASE_URL } from '../config';
 import { MultiDatasetSelector } from './MultiDatasetSelector';
@@ -71,6 +74,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   const [selectedDataset2, setSelectedDataset2] = React.useState<Dataset | null>(null);
   const [selectedPriceDataset, setSelectedPriceDataset] = React.useState<Dataset | null>(null);
   const [datasets, setDatasets] = React.useState<Dataset[]>([]);
+  const [datasetOpen, setDatasetOpen] = React.useState(false);
 
   // Cargar datasets al montar el componente
   React.useEffect(() => {
@@ -212,111 +216,184 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
     }));
   };
 
+  const selectedDatasetInfo = selectedDataset;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="h-5 w-5" />
-          Parámetros del Backtest
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Selección de Dataset */}
-          <div className="space-y-2">
-            <Label htmlFor="dataset-select" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Dataset para Backtesting
-            </Label>
-            <Select
-              value={selectedDataset ? selectedDataset.id.toString() : ""}
-              onValueChange={(value) => {
-                if (value && onDatasetSelect) {
-                  const dataset = datasets.find(d => d.id.toString() === value);
-                  if (dataset) {
-                    onDatasetSelect(dataset);
-                  }
-                }
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un dataset para hacer backtesting" />
-              </SelectTrigger>
-              <SelectContent>
-                {datasets.map((dataset) => (
-                  <SelectItem key={dataset.id} value={dataset.id.toString()}>
-                    {dataset.name} ({dataset.row_count.toLocaleString()} registros)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedDataset && (
-              <p className="text-xs text-blue-600 mt-1">
-                Dataset seleccionado: {selectedDataset.name} - {selectedDataset.row_count.toLocaleString()} registros
-              </p>
-            )}
-          </div>
+    <div className="max-w-7xl mx-auto p-4 space-y-4">
+      <div className="flex items-center gap-3 mb-4">
+        <Settings className="h-6 w-6 text-blue-600" />
+        <h1 className="text-2xl font-bold text-gray-900">Configuración del Backtest</h1>
+      </div>
 
+      <form onSubmit={handleSubmit}>
+        <Card className="border-blue-100 shadow-sm">
+          <CardHeader className="bg-blue-50/50 min-h-[3rem] flex items-center py-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-blue-900">
+              <BarChart3 className="h-5 w-5" />
+              Parámetros del backtest
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 py-1 space-y-3">
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="dataset" className="text-sm font-medium text-gray-700">
+                  Dataset
+                </Label>
+                <Popover open={datasetOpen} onOpenChange={setDatasetOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={datasetOpen}
+                      className="w-full justify-between h-12 px-4 py-3 bg-transparent"
+                    >
+                      <div className="text-left">
+                        <div className="font-medium text-blue-700 text-sm">
+                          {selectedDatasetInfo ? selectedDatasetInfo.name : "Selecciona un dataset para hacer backtesting"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {selectedDatasetInfo ? `${selectedDatasetInfo.row_count.toLocaleString()} registros` : ""}
+                        </div>
+                      </div>
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom">
+                    <Command>
+                      <CommandInput placeholder="Buscar dataset..." />
+                      <CommandEmpty>No se encontró ningún dataset.</CommandEmpty>
+                      <CommandList>
+                        <CommandGroup>
+                          {datasets.map((dataset) => (
+                            <CommandItem
+                              key={dataset.id}
+                              value={dataset.id.toString()}
+                              onSelect={(currentValue: string) => {
+                                const selected = datasets.find(d => d.id.toString() === currentValue);
+                                if (selected && onDatasetSelect) {
+                                  onDatasetSelect(selected);
+                                }
+                                setDatasetOpen(false);
+                              }}
+                            >
+                              <div>
+                                <div className="font-medium">{dataset.name}</div>
+                                <div className="text-xs text-gray-500">{dataset.row_count.toLocaleString()} registros</div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="period" className="text-sm font-medium text-gray-700">
+                    Período de backtesting
+                  </Label>
+                  <Select
+                    value={formData.period}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, period: value as any }))}
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1w">Última Semana</SelectItem>
+                      <SelectItem value="1m">Último Mes</SelectItem>
+                      <SelectItem value="3m">Último Trimestre</SelectItem>
+                      <SelectItem value="6m">Últimos 6 Meses</SelectItem>
+                      <SelectItem value="ytd">Este Año (YTD)</SelectItem>
+                      <SelectItem value="1y">Último Año</SelectItem>
+                      <SelectItem value="2y">Últimos 2 Años</SelectItem>
+                      <SelectItem value="3y">Últimos 3 Años</SelectItem>
+                      <SelectItem value="4y">Últimos 4 Años</SelectItem>
+                      <SelectItem value="5y">Últimos 5 Años</SelectItem>
+                      <SelectItem value="6y">Últimos 6 Años</SelectItem>
+                      <SelectItem value="7y">Últimos 7 Años</SelectItem>
+                      <SelectItem value="8y">Últimos 8 Años</SelectItem>
+                      <SelectItem value="9y">Últimos 9 Años</SelectItem>
+                      <SelectItem value="10y">Últimos 10 Años</SelectItem>
+                      <SelectItem value="2025">Año 2025</SelectItem>
+                      <SelectItem value="2024">Año 2024</SelectItem>
+                      <SelectItem value="2023">Año 2023</SelectItem>
+                      <SelectItem value="2022">Año 2022</SelectItem>
+                      <SelectItem value="2021">Año 2021</SelectItem>
+                      <SelectItem value="2020">Año 2020</SelectItem>
+                      <SelectItem value="2019">Año 2019</SelectItem>
+                      <SelectItem value="2018">Año 2018</SelectItem>
+                      <SelectItem value="2017">Año 2017</SelectItem>
+                      <SelectItem value="2016">Año 2016</SelectItem>
+                      <SelectItem value="2015">Año 2015</SelectItem>
+                      <SelectItem value="all">Todo el Tiempo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-          {/* Período de Backtesting */}
-          <div className="space-y-2">
-            <Label htmlFor="period" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Período de Backtesting
-            </Label>
-            <Select
-              value={formData.period}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, period: value as any }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1w">Última Semana</SelectItem>
-                <SelectItem value="1m">Último Mes</SelectItem>
-                <SelectItem value="3m">Último Trimestre</SelectItem>
-                <SelectItem value="6m">Últimos 6 Meses</SelectItem>
-                <SelectItem value="ytd">Este Año (YTD)</SelectItem>
-                <SelectItem value="1y">Último Año</SelectItem>
-                <SelectItem value="2y">Últimos 2 Años</SelectItem>
-                <SelectItem value="3y">Últimos 3 Años</SelectItem>
-                <SelectItem value="4y">Últimos 4 Años</SelectItem>
-                <SelectItem value="5y">Últimos 5 Años</SelectItem>
-                <SelectItem value="6y">Últimos 6 Años</SelectItem>
-                <SelectItem value="7y">Últimos 7 Años</SelectItem>
-                <SelectItem value="8y">Últimos 8 Años</SelectItem>
-                <SelectItem value="9y">Últimos 9 Años</SelectItem>
-                <SelectItem value="10y">Últimos 10 Años</SelectItem>
-                <SelectItem value="2025">Año 2025</SelectItem>
-                <SelectItem value="2024">Año 2024</SelectItem>
-                <SelectItem value="2023">Año 2023</SelectItem>
-                <SelectItem value="2022">Año 2022</SelectItem>
-                <SelectItem value="2021">Año 2021</SelectItem>
-                <SelectItem value="2020">Año 2020</SelectItem>
-                <SelectItem value="2019">Año 2019</SelectItem>
-                <SelectItem value="2018">Año 2018</SelectItem>
-                <SelectItem value="2017">Año 2017</SelectItem>
-                <SelectItem value="2016">Año 2016</SelectItem>
-                <SelectItem value="2015">Año 2015</SelectItem>
-                <SelectItem value="all">Todo el Tiempo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="capital" className="text-sm font-medium text-gray-700">
+                      Capital inicial ($)
+                    </Label>
+                    <Input 
+                      id="capital" 
+                      type="number" 
+                      value={formData.init_cash}
+                      onChange={(e) => setFormData(prev => ({ ...prev, init_cash: parseFloat(e.target.value) || 10000 }))}
+                      className="h-10" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="commission" className="text-sm font-medium text-gray-700">
+                      Comisiones (%)
+                    </Label>
+                    <Input 
+                      id="commission" 
+                      type="number" 
+                      step="0.001" 
+                      value={formData.fees * 100}
+                      onChange={(e) => setFormData(prev => ({ ...prev, fees: (parseFloat(e.target.value) || 0) / 100 }))}
+                      className="h-10" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="slippage" className="text-sm font-medium text-gray-700">
+                      Slippage (%)
+                    </Label>
+                    <Input 
+                      id="slippage" 
+                      type="number" 
+                      step="0.01" 
+                      value={formData.slippage * 100}
+                      onChange={(e) => setFormData(prev => ({ ...prev, slippage: (parseFloat(e.target.value) || 0) / 100 }))}
+                      className="h-10" 
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Transformaciones */}
-          <div className="space-y-4">
-            <h4 className="font-medium">Transformaciones</h4>
-            
-            {/* Transformación para 'v' */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="v-transform">Indicador (v)</Label>
+        <Card className="border-green-100 shadow-sm">
+          <CardHeader className="bg-green-50/50 min-h-[3rem] flex items-center py-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-green-900">
+              <TrendingUp className="h-5 w-5" />
+              Transformaciones
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 py-1 space-y-3">
+            <div className="grid grid-cols-4 gap-4 relative">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Indicador (v)</Label>
                 <Select
                   value={formData.transform.v.type}
                   onValueChange={(value) => updateTransform('v', 'type', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -327,28 +404,27 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="v-period">Período</Label>
-                <Input
-                  id="v-period"
-                  type="number"
-                  min="1"
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Período</Label>
+                <Input 
+                  type="number" 
                   value={formData.transform.v.period}
                   onChange={(e) => updateTransform('v', 'period', parseInt(e.target.value) || 1)}
                   disabled={formData.transform.v.type === 'none'}
+                  className="h-10" 
                 />
               </div>
-            </div>
 
-            {/* Transformación para 'usd' */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="usd-transform">Precio (USD)</Label>
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 transform -translate-x-px"></div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Precio (USD)</Label>
                 <Select
                   value={formData.transform.usd.type}
                   onValueChange={(value) => updateTransform('usd', 'type', value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -359,443 +435,357 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="usd-period">Período</Label>
-                <Input
-                  id="usd-period"
-                  type="number"
-                  min="1"
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Período</Label>
+                <Input 
+                  type="number" 
                   value={formData.transform.usd.period}
                   onChange={(e) => updateTransform('usd', 'period', parseInt(e.target.value) || 1)}
                   disabled={formData.transform.usd.type === 'none'}
+                  className="h-10" 
                 />
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Aplicar señales a */}
-          <div>
-            <Label htmlFor="apply-to">Aplicar señales a</Label>
-            <Select
-              value={formData.apply_to}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, apply_to: value as 'v' | 'usd' }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="v">Indicador (v)</SelectItem>
-                <SelectItem value="usd">Precio (USD)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Tipo de Estrategia */}
-          <div>
-            <Label htmlFor="strategy-type">Tipo de Estrategia</Label>
-            <Select
-              value={formData.strategy_type}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, strategy_type: value as 'threshold' | 'crossover' | 'multi_dataset_crossover' }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="threshold">Umbrales</SelectItem>
-                <SelectItem value="crossover">Cruces de Medias Móviles</SelectItem>
-                <SelectItem value="multi_dataset_crossover">Cruce entre Datasets</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-
-
-          {/* Umbrales - Solo para estrategia threshold */}
-          {formData.strategy_type === 'threshold' && (
-            <div className="space-y-4">
-              <h4 className="font-medium">Umbrales</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="threshold-entry">Umbral de Entrada</Label>
-                  <Input
-                    id="threshold-entry"
-                    type="number"
-                    step="0.01"
-                    value={formData.threshold_entry}
-                    onChange={(e) => setFormData(prev => ({ ...prev, threshold_entry: parseFloat(e.target.value) || 0 }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="threshold-exit">Umbral de Salida</Label>
-                  <Input
-                    id="threshold-exit"
-                    type="number"
-                    step="0.01"
-                    value={formData.threshold_exit}
-                    onChange={(e) => setFormData(prev => ({ ...prev, threshold_exit: parseFloat(e.target.value) || 0 }))}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Cruces de Medias Móviles - Solo para estrategia crossover */}
-          {formData.strategy_type === 'crossover' && (
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Cruces de Medias Móviles
-              </h4>
-              
-              {/* Selector de serie a analizar */}
+        <Card className="border-purple-100 shadow-sm">
+          <CardHeader className="bg-purple-50/50 min-h-[3rem] flex items-center py-3">
+            <CardTitle className="flex items-center gap-2 text-lg text-purple-900">
+              <Settings className="h-5 w-5" />
+              Estrategia de backtesting
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 py-1 space-y-3">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="crossover-series" className="text-sm font-medium">Aplicar cruces sobre:</Label>
+                <Label className="text-sm font-medium text-gray-700">Tipo de Estrategia</Label>
+                <Select
+                  value={formData.strategy_type}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, strategy_type: value as 'threshold' | 'crossover' | 'multi_dataset_crossover' }))}
+                >
+                  <SelectTrigger className="h-10 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="threshold">Umbrales</SelectItem>
+                    <SelectItem value="crossover">Cruces de Medias Móviles</SelectItem>
+                    <SelectItem value="multi_dataset_crossover">Cruce entre Datasets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  {formData.strategy_type === 'crossover' ? "Aplicar cruces sobre:" : "Aplicar señales a"}
+                </Label>
                 <Select
                   value={formData.apply_to}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, apply_to: value as 'v' | 'usd' }))}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="v">Indicador (v)</SelectItem>
-                    <SelectItem value="usd">Precio Bitcoin (usd)</SelectItem>
+                    <SelectItem value="usd">Precio (USD)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
-              {/* Configuración de Entrada */}
-              <div className="space-y-3">
-                <h5 className="text-sm font-medium text-green-700 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Señales de Entrada
-                </h5>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-fast" className="text-sm font-medium h-5 flex items-center">Período Rápido</Label>
-                    <Input
-                      id="entry-fast"
-                      type="number"
-                      min="1"
-                      value={formData.crossover_strategy.entry_fast_period}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          entry_fast_period: parseInt(e.target.value) || 7
-                        }
-                      }))}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-slow" className="text-sm font-medium h-5 flex items-center">Período Lento</Label>
-                    <Input
-                      id="entry-slow"
-                      type="number"
-                      min="1"
-                      value={formData.crossover_strategy.entry_slow_period}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          entry_slow_period: parseInt(e.target.value) || 30
-                        }
-                      }))}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-type" className="text-sm font-medium h-5 flex items-center">Tipo</Label>
-                    <Select
-                      value={formData.crossover_strategy.entry_type}
-                      onValueChange={(value) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          entry_type: value as 'sma' | 'ema'
-                        }
-                      }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sma">SMA</SelectItem>
-                        <SelectItem value="ema">EMA</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="entry-direction" className="text-sm font-medium h-5 flex items-center gap-1">
-                      <ArrowUp className="h-3 w-3" />
-                      Dirección
-                    </Label>
-                    <Select
-                      value={formData.crossover_strategy.entry_direction}
-                      onValueChange={(value) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          entry_direction: value as 'up' | 'down'
-                        }
-                      }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="up">Al Alza</SelectItem>
-                        <SelectItem value="down">A la Baja</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Configuración de Salida */}
-              <div className="space-y-3">
-                <h5 className="text-sm font-medium text-red-700 flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4" />
-                  Señales de Salida
-                </h5>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="exit-fast" className="text-sm font-medium h-5 flex items-center">Período Rápido</Label>
-                    <Input
-                      id="exit-fast"
-                      type="number"
-                      min="1"
-                      value={formData.crossover_strategy.exit_fast_period}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          exit_fast_period: parseInt(e.target.value) || 7
-                        }
-                      }))}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="exit-slow" className="text-sm font-medium h-5 flex items-center">Período Lento</Label>
-                    <Input
-                      id="exit-slow"
-                      type="number"
-                      min="1"
-                      value={formData.crossover_strategy.exit_slow_period}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          exit_slow_period: parseInt(e.target.value) || 14
-                        }
-                      }))}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="exit-type" className="text-sm font-medium h-5 flex items-center">Tipo</Label>
-                    <Select
-                      value={formData.crossover_strategy.exit_type}
-                      onValueChange={(value) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          exit_type: value as 'sma' | 'ema'
-                        }
-                      }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sma">SMA</SelectItem>
-                        <SelectItem value="ema">EMA</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="exit-direction" className="text-sm font-medium h-5 flex items-center gap-1">
-                      <ArrowDown className="h-3 w-3" />
-                      Dirección
-                    </Label>
-                    <Select
-                      value={formData.crossover_strategy.exit_direction}
-                      onValueChange={(value) => setFormData(prev => ({
-                        ...prev,
-                        crossover_strategy: {
-                          ...prev.crossover_strategy,
-                          exit_direction: value as 'up' | 'down'
-                        }
-                      }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="up">Al Alza</SelectItem>
-                        <SelectItem value="down">A la Baja</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
             </div>
-          )}
 
-          {/* Cruce entre Datasets - Solo para estrategia multi_dataset_crossover */}
-          {formData.strategy_type === 'multi_dataset_crossover' && (
-            <MultiDatasetSelector
-              datasets={datasets}
-              selectedDataset1={selectedDataset1}
-              selectedDataset2={selectedDataset2}
-              selectedPriceDataset={selectedPriceDataset}
-              onDataset1Select={setSelectedDataset1}
-              onDataset2Select={setSelectedDataset2}
-              onPriceDatasetSelect={setSelectedPriceDataset}
-              strategy={{
-                dataset1_indicator: formData.multi_dataset_crossover_strategy.dataset1_indicator,
-                dataset1_ma_type: formData.multi_dataset_crossover_strategy.dataset1_ma_type,
-                dataset1_ma_period: formData.multi_dataset_crossover_strategy.dataset1_ma_period,
-                dataset2_indicator: formData.multi_dataset_crossover_strategy.dataset2_indicator,
-                dataset2_ma_type: formData.multi_dataset_crossover_strategy.dataset2_ma_type,
-                dataset2_ma_period: formData.multi_dataset_crossover_strategy.dataset2_ma_period,
-                entry_direction: formData.multi_dataset_crossover_strategy.entry_direction,
-                exit_direction: formData.multi_dataset_crossover_strategy.exit_direction,
-                take_profit_pct: formData.multi_dataset_crossover_strategy.take_profit_pct,
-                stop_loss_pct: formData.multi_dataset_crossover_strategy.stop_loss_pct,
-                use_take_profit: formData.multi_dataset_crossover_strategy.use_take_profit,
-                use_stop_loss: formData.multi_dataset_crossover_strategy.use_stop_loss
-              }}
-              onStrategyChange={updateMultiDatasetStrategy}
-            />
-          )}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h3 className="font-semibold text-gray-900 mb-3">
+                {formData.strategy_type === 'threshold' && 'Umbrales'}
+                {formData.strategy_type === 'crossover' && 'Cruces de Medias Móviles'}
+                {formData.strategy_type === 'multi_dataset_crossover' && 'Cruce entre Datasets'}
+              </h3>
 
-          {/* Condiciones de precio de Bitcoin */}
-          <div className="space-y-3">
-            <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <Bitcoin className="h-4 w-4" />
-              Condiciones de precio de Bitcoin
-            </h5>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="bitcoin-condition-enabled"
-                  checked={formData.bitcoin_price_condition.enabled}
-                  onChange={(e) => updateBitcoinPriceCondition('enabled', e.target.checked)}
-                  className="rounded border-gray-300"
+              {formData.strategy_type === 'threshold' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Umbral de Entrada</Label>
+                    <Input 
+                      type="number" 
+                      value={formData.threshold_entry}
+                      onChange={(e) => setFormData(prev => ({ ...prev, threshold_entry: parseFloat(e.target.value) || 0 }))}
+                      className="h-10" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-gray-700">Umbral de Salida</Label>
+                    <Input 
+                      type="number" 
+                      value={formData.threshold_exit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, threshold_exit: parseFloat(e.target.value) || 0 }))}
+                      className="h-10" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {formData.strategy_type === 'crossover' && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-green-600" />
+                      <h4 className="font-medium text-green-700">Señales de Entrada</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Período Rápido</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.crossover_strategy.entry_fast_period}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              entry_fast_period: parseInt(e.target.value) || 7
+                            }
+                          }))}
+                          className="h-10" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Período Lento</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.crossover_strategy.entry_slow_period}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              entry_slow_period: parseInt(e.target.value) || 30
+                            }
+                          }))}
+                          className="h-10" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Tipo</Label>
+                        <Select
+                          value={formData.crossover_strategy.entry_type}
+                          onValueChange={(value) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              entry_type: value as 'sma' | 'ema'
+                            }
+                          }))}
+                        >
+                          <SelectTrigger className="h-10 w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sma">SMA</SelectItem>
+                            <SelectItem value="ema">EMA</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">↑ Dirección</Label>
+                        <Select
+                          value={formData.crossover_strategy.entry_direction}
+                          onValueChange={(value) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              entry_direction: value as 'up' | 'down'
+                            }
+                          }))}
+                        >
+                          <SelectTrigger className="h-10 w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="up">Al Alza</SelectItem>
+                            <SelectItem value="down">A la Baja</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingDown className="h-4 w-4 text-red-600" />
+                      <h4 className="font-medium text-red-700">Señales de Salida</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Período Rápido</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.crossover_strategy.exit_fast_period}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              exit_fast_period: parseInt(e.target.value) || 7
+                            }
+                          }))}
+                          className="h-10" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Período Lento</Label>
+                        <Input 
+                          type="number" 
+                          value={formData.crossover_strategy.exit_slow_period}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              exit_slow_period: parseInt(e.target.value) || 14
+                            }
+                          }))}
+                          className="h-10" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">Tipo</Label>
+                        <Select
+                          value={formData.crossover_strategy.exit_type}
+                          onValueChange={(value) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              exit_type: value as 'sma' | 'ema'
+                            }
+                          }))}
+                        >
+                          <SelectTrigger className="h-10 w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sma">SMA</SelectItem>
+                            <SelectItem value="ema">EMA</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">↓ Dirección</Label>
+                        <Select
+                          value={formData.crossover_strategy.exit_direction}
+                          onValueChange={(value) => setFormData(prev => ({
+                            ...prev,
+                            crossover_strategy: {
+                              ...prev.crossover_strategy,
+                              exit_direction: value as 'up' | 'down'
+                            }
+                          }))}
+                        >
+                          <SelectTrigger className="h-10 w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="up">Al Alza</SelectItem>
+                            <SelectItem value="down">A la Baja</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {formData.strategy_type === 'multi_dataset_crossover' && (
+                <MultiDatasetSelector
+                  datasets={datasets}
+                  selectedDataset1={selectedDataset1}
+                  selectedDataset2={selectedDataset2}
+                  selectedPriceDataset={selectedPriceDataset}
+                  onDataset1Select={setSelectedDataset1}
+                  onDataset2Select={setSelectedDataset2}
+                  onPriceDatasetSelect={setSelectedPriceDataset}
+                  strategy={{
+                    dataset1_indicator: formData.multi_dataset_crossover_strategy.dataset1_indicator,
+                    dataset1_ma_type: formData.multi_dataset_crossover_strategy.dataset1_ma_type,
+                    dataset1_ma_period: formData.multi_dataset_crossover_strategy.dataset1_ma_period,
+                    dataset2_indicator: formData.multi_dataset_crossover_strategy.dataset2_indicator,
+                    dataset2_ma_type: formData.multi_dataset_crossover_strategy.dataset2_ma_type,
+                    dataset2_ma_period: formData.multi_dataset_crossover_strategy.dataset2_ma_period,
+                    entry_direction: formData.multi_dataset_crossover_strategy.entry_direction,
+                    exit_direction: formData.multi_dataset_crossover_strategy.exit_direction,
+                    take_profit_pct: formData.multi_dataset_crossover_strategy.take_profit_pct,
+                    stop_loss_pct: formData.multi_dataset_crossover_strategy.stop_loss_pct,
+                    use_take_profit: formData.multi_dataset_crossover_strategy.use_take_profit,
+                    use_stop_loss: formData.multi_dataset_crossover_strategy.use_stop_loss
+                  }}
+                  onStrategyChange={updateMultiDatasetStrategy}
                 />
-                <Label htmlFor="bitcoin-condition-enabled" className="text-sm">
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 cursor-pointer">
+                <Checkbox
+                  id="bitcoin-conditions"
+                  checked={formData.bitcoin_price_condition.enabled}
+                  onCheckedChange={(checked: boolean) => updateBitcoinPriceCondition('enabled', checked)}
+                />
+                <Label htmlFor="bitcoin-conditions" className="text-sm font-medium text-gray-700 cursor-pointer">
                   Activar condiciones de precio de Bitcoin
                 </Label>
               </div>
-              
+
               {formData.bitcoin_price_condition.enabled && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                  <div className="space-y-2">
-                    <Label htmlFor="bitcoin-ma-type" className="text-sm font-medium">Tipo de Media</Label>
-                    <Select
-                      value={formData.bitcoin_price_condition.ma_type}
-                      onValueChange={(value) => updateBitcoinPriceCondition('ma_type', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sma">SMA (Simple)</SelectItem>
-                        <SelectItem value="ema">EMA (Exponencial)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="bitcoin-ma-period" className="text-sm font-medium">Períodos</Label>
-                    <Input
-                      id="bitcoin-ma-period"
-                      type="number"
-                      min="1"
-                      max="10000"
-                      value={formData.bitcoin_price_condition.ma_period}
-                      onChange={(e) => updateBitcoinPriceCondition('ma_period', parseInt(e.target.value) || 50)}
-                      className="w-full"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="bitcoin-condition" className="text-sm font-medium">Condición</Label>
-                    <Select
-                      value={formData.bitcoin_price_condition.condition}
-                      onValueChange={(value) => updateBitcoinPriceCondition('condition', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="above">Por encima</SelectItem>
-                        <SelectItem value="below">Por debajo</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="bg-blue-50 p-3 rounded-lg space-y-3">
+                  <h4 className="font-medium text-blue-900">Condiciones de precio de Bitcoin</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Tipo de Media</Label>
+                      <Select
+                        value={formData.bitcoin_price_condition.ma_type}
+                        onValueChange={(value) => updateBitcoinPriceCondition('ma_type', value)}
+                      >
+                        <SelectTrigger className="h-10 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sma">SMA (Simple)</SelectItem>
+                          <SelectItem value="ema">EMA (Exponencial)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Períodos</Label>
+                      <Input 
+                        type="number" 
+                        value={formData.bitcoin_price_condition.ma_period}
+                        onChange={(e) => updateBitcoinPriceCondition('ma_period', parseInt(e.target.value) || 50)}
+                        className="h-10" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-gray-700">Condición</Label>
+                      <Select
+                        value={formData.bitcoin_price_condition.condition}
+                        onValueChange={(value) => updateBitcoinPriceCondition('condition', value)}
+                      >
+                        <SelectTrigger className="h-10 w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="above">Por encima</SelectItem>
+                          <SelectItem value="below">Por debajo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Comisiones y Slippage */}
-          <div className="space-y-3">
-            <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Configuración de Trading
-            </h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fees" className="text-sm font-medium">Comisiones (%)</Label>
-                <Input
-                  id="fees"
-                  type="number"
-                  step="0.0001"
-                  min="0"
-                  max="0.1"
-                  value={formData.fees * 100}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fees: (parseFloat(e.target.value) || 0) / 100 }))}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="slippage" className="text-sm font-medium">Slippage (%)</Label>
-                <Input
-                  id="slippage"
-                  type="number"
-                  step="0.0001"
-                  min="0"
-                  max="0.1"
-                  value={formData.slippage * 100}
-                  onChange={(e) => setFormData(prev => ({ ...prev, slippage: (parseFloat(e.target.value) || 0) / 100 }))}
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Capital inicial */}
-          <div className="space-y-2">
-            <Label htmlFor="init-cash" className="text-sm font-medium">Capital Inicial ($)</Label>
-            <Input
-              id="init-cash"
-              type="number"
-              min="1"
-              value={formData.init_cash}
-              onChange={(e) => setFormData(prev => ({ ...prev, init_cash: parseFloat(e.target.value) || 10000 }))}
-              className="w-full"
-            />
-          </div>
-
-          {/* Botón de envío */}
-          <Button 
-            type="submit" 
-            className="w-full" 
+        <div className="flex justify-center pt-2">
+          <Button
+            type="submit"
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-medium"
             disabled={
               isRunning || 
               !selectedDataset || 
@@ -817,8 +807,8 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
               </>
             )}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </form>
+    </div>
   );
 }
