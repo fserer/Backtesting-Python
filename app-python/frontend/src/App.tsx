@@ -7,7 +7,6 @@ import { KpiCards } from './components/KpiCards';
 import { EquityChart } from './components/EquityChart';
 import { TradesTable } from './components/TradesTable';
 import { FundingCost } from './components/FundingCost';
-import { BacktestResults } from './components/BacktestResults';
 import PyfolioAnalysis from './components/PyfolioAnalysis';
 import DatasetUpdater from './components/DatasetUpdater';
 import Login from './components/Login';
@@ -249,14 +248,65 @@ function AppContent() {
               />
             </div>
 
-            {/* Resultados del Backtest - Solo mostrar si hay resultados */}
-            {backtestResult && (
-              <BacktestResults
-                results={backtestResult}
-                initialCapital={initialCapital}
-                onSaveStrategy={() => setShowSaveModal(true)}
-                onViewStrategies={() => setCurrentPage('strategies')}
+            {/* Sección inferior - KPIs y Gráfico de Equity */}
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* KPIs - 1 tercio */}
+              <div>
+                <KpiCards results={backtestResult?.results} initialCapital={initialCapital} />
+              </div>
+              
+              {/* Gráfico de Equity - 2 tercios */}
+              <div className="lg:col-span-2 flex">
+                <EquityChart equity={backtestResult?.equity} />
+              </div>
+            </div>
+
+            {/* Tabla de Operaciones - Ancho completo */}
+            <div className="mt-8">
+              <TradesTable 
+                trades={backtestResult?.trades || []} 
+                datasetInterval={backtestResult?.dataset_interval}
               />
+            </div>
+
+            {/* Coste de Funding - Ancho completo */}
+            {backtestResult?.trades && backtestResult.trades.length > 0 && (
+              <div className="mt-8">
+                <FundingCost 
+                  trades={backtestResult.trades} 
+                  fundingRateAnnual={11.6} 
+                />
+              </div>
+            )}
+
+            {/* Sección de Guardar Estrategia */}
+            {backtestResult?.trades && backtestResult.trades.length > 0 && (
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      ¿Te gusta esta estrategia?
+                    </h3>
+                    <p className="text-gray-600">
+                      Guarda esta configuración para reutilizarla o compartirla con otros usuarios.
+                    </p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => setShowSaveModal(true)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      Guardar Estrategia
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage('strategies')}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    >
+                      Ver Todas las Estrategias
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Información adicional */}
