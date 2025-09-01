@@ -287,9 +287,9 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                           {datasets.map((dataset) => (
                             <CommandItem
                               key={dataset.id}
-                              value={dataset.id.toString()}
+                              value={dataset.name}
                               onSelect={(currentValue: string) => {
-                                const selected = datasets.find(d => d.id.toString() === currentValue);
+                                const selected = datasets.find(d => d.name === currentValue);
                                 if (selected && onDatasetSelect) {
                                   onDatasetSelect(selected);
                                 }
