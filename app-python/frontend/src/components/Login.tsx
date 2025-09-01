@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
-import { Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, LogIn, UserPlus, Zap } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (token: string, user: any) => void;
@@ -52,7 +52,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, onSwitchToRegister }) => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Backtesting App</CardTitle>
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Backtester Pro</CardTitle>
+              <p className="text-sm text-gray-600">Advanced Backtesting Platform</p>
+            </div>
+          </div>
           <CardDescription>
             Inicia sesión para acceder al dashboard
           </CardDescription>

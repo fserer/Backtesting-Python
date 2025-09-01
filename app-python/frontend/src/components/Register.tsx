@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
-import { Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, ArrowLeft, Zap } from 'lucide-react';
 
 interface RegisterProps {
   onRegister: (token: string, user: any) => void;
@@ -67,7 +67,15 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onSwitchToLogin }) => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Backtester Pro</CardTitle>
+              <p className="text-sm text-gray-600">Advanced Backtesting Platform</p>
+            </div>
+          </div>
           <CardDescription>
             Regístrate para acceder al dashboard
           </CardDescription>
