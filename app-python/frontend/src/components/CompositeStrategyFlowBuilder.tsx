@@ -139,19 +139,27 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
     
     setConditions(prev => {
       const newConditions = [...prev, newCondition];
-      // Construir y enviar la estrategia actualizada
-      setTimeout(() => buildStrategy(newConditions), 0);
       return newConditions;
     });
+    
+    // Construir y enviar la estrategia actualizada después de que se actualice el estado
+    setTimeout(() => {
+      const updatedConditions = [...conditions, newCondition];
+      buildStrategy(updatedConditions);
+    }, 0);
   };
 
   const removeCondition = (id: string) => {
     setConditions(prev => {
       const newConditions = prev.filter(c => c.id !== id);
-      // Construir y enviar la estrategia actualizada
-      setTimeout(() => buildStrategy(newConditions), 0);
       return newConditions;
     });
+    
+    // Construir y enviar la estrategia actualizada después de que se actualice el estado
+    setTimeout(() => {
+      const updatedConditions = conditions.filter(c => c.id !== id);
+      buildStrategy(updatedConditions);
+    }, 0);
   };
 
   const updateCondition = (id: string, updates: Partial<StrategyCondition>) => {
@@ -159,10 +167,16 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
       const newConditions = prev.map(c => 
         c.id === id ? { ...c, ...updates } : c
       );
-      // Construir y enviar la estrategia actualizada
-      setTimeout(() => buildStrategy(newConditions), 0);
       return newConditions;
     });
+    
+    // Construir y enviar la estrategia actualizada después de que se actualice el estado
+    setTimeout(() => {
+      const updatedConditions = conditions.map(c => 
+        c.id === id ? { ...c, ...updates } : c
+      );
+      buildStrategy(updatedConditions);
+    }, 0);
   };
 
   const moveCondition = (fromIndex: number, toIndex: number) => {
@@ -170,10 +184,16 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
       const newConditions = [...prev];
       const [movedCondition] = newConditions.splice(fromIndex, 1);
       newConditions.splice(toIndex, 0, movedCondition);
-      // Construir y enviar la estrategia actualizada
-      setTimeout(() => buildStrategy(newConditions), 0);
       return newConditions;
     });
+    
+    // Construir y enviar la estrategia actualizada después de que se actualice el estado
+    setTimeout(() => {
+      const updatedConditions = [...conditions];
+      const [movedCondition] = updatedConditions.splice(fromIndex, 1);
+      updatedConditions.splice(toIndex, 0, movedCondition);
+      buildStrategy(updatedConditions);
+    }, 0);
   };
 
   const buildStrategy = (conditionsToUse?: StrategyCondition[]) => {
