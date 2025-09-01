@@ -4,13 +4,17 @@ interface HeaderProps {
   currentUser?: any;
   onProfileClick?: () => void;
   onLogout?: () => void;
+  onLogoClick?: () => void;
 }
 
-export function Header({ currentUser, onProfileClick, onLogout }: HeaderProps) {
+export function Header({ currentUser, onProfileClick, onLogout, onLogoClick }: HeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={onLogoClick}
+        >
           <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
             <Zap className="w-6 h-6 text-white" />
           </div>
