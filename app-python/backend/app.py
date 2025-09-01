@@ -26,7 +26,8 @@ from models.schemas import (
     CreateDatasetRequest, UpdateDatasetRequest, PyfolioRequest,
     UserLogin, UserRegister, Token, User,
     SaveStrategyRequest, StrategySummary, StrategyDetail, StrategiesResponse,
-    HyperliquidSettingsRequest, HyperliquidSettingsResponse
+    HyperliquidSettingsRequest, HyperliquidSettingsResponse,
+    CompositeBacktestRequest
 )
 
 # Configurar logging
@@ -198,6 +199,39 @@ async def run_backtest_endpoint(request: BacktestRequest):
         
     except Exception as e:
         logger.error(f"Error en backtest: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/backtest/composite", response_model=BacktestResponse)
+async def run_composite_backtest_endpoint(request: CompositeBacktestRequest):
+    """
+    Ejecuta un backtest compuesto con múltiples condiciones.
+    """
+    try:
+        # Debug: Log de la request recibida
+        logger.info(f"Backtest compuesto request recibida:")
+        logger.info(f"  - period: {request.period}")
+        logger.info(f"  - init_cash: {request.init_cash}")
+        logger.info(f"  - fees: {request.fees}")
+        logger.info(f"  - slippage: {request.slippage}")
+        logger.info(f"  - conditions: {len(request.conditions)} condiciones")
+        
+        # Verificar que todas las condiciones tengan datasets válidos
+        for i, condition in enumerate(request.conditions):
+            dataset = get_dataset_by_id(condition.dataset_id)
+            if not dataset:
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Dataset con ID {condition.dataset_id} no encontrado para la condición {i+1}."
+                )
+        
+        # Ejecutar backtest compuesto
+        from services.composite_backtest import run_composite_backtest
+        results = run_composite_backtest(request)
+        
+        return BacktestResponse(**results)
+        
+    except Exception as e:
+        logger.error(f"Error en backtest compuesto: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/datasets", response_model=List[Dataset])

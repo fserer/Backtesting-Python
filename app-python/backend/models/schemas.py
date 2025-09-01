@@ -79,6 +79,36 @@ class BacktestRequest(BaseModel):
             raise ValueError('Los thresholds deben ser numéricos')
         return float(v)
 
+class CompositeStrategyCondition(BaseModel):
+    type: Literal["threshold", "crossover", "multi_dataset_crossover"] = "threshold"
+    dataset_id: int
+    transform: TransformRequest
+    apply_to: Literal["v", "usd"] = "v"
+    threshold_entry: Optional[float] = None
+    threshold_exit: Optional[float] = None
+    crossover_strategy: Optional[CrossoverStrategy] = None
+    multi_dataset_crossover_strategy: Optional[MultiDatasetCrossoverStrategy] = None
+    bitcoin_price_condition: BitcoinPriceCondition = Field(default_factory=lambda: BitcoinPriceCondition())
+    logic: Literal["AND", "OR"] = "AND"
+    
+    @validator('threshold_entry', 'threshold_exit')
+    def validate_thresholds(cls, v):
+        if v is not None and not isinstance(v, (int, float)):
+            raise ValueError('Los thresholds deben ser numéricos')
+        return float(v) if v is not None else v
+
+class CompositeBacktestRequest(BaseModel):
+    period: Literal[
+        "1w", "1m", "3m", "6m", "1y", "ytd", 
+        "2y", "3y", "4y", "5y", "6y", "7y", "8y", "9y", "10y",
+        "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025",
+        "all"
+    ] = "all"
+    init_cash: float = Field(10000.0, gt=0.0)
+    fees: float = Field(0.00045, ge=0.0, le=0.1)
+    slippage: float = Field(0.0002, ge=0.0, le=0.1)
+    conditions: List[CompositeStrategyCondition] = Field(..., min_items=1)
+
 class Dataset(BaseModel):
     id: int
     name: str
