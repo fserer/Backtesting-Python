@@ -122,7 +122,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   // Actualizar estrategia multi-dataset cuando cambien los datasets seleccionados
   React.useEffect(() => {
     if (selectedDataset1) {
-      setFormData(prev => ({
+      updateFormData(prev => ({
         ...prev,
         multi_dataset_crossover_strategy: {
           ...prev.multi_dataset_crossover_strategy,
@@ -134,7 +134,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
 
   React.useEffect(() => {
     if (selectedDataset2) {
-      setFormData(prev => ({
+      updateFormData(prev => ({
         ...prev,
         multi_dataset_crossover_strategy: {
           ...prev.multi_dataset_crossover_strategy,
@@ -146,7 +146,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
 
   React.useEffect(() => {
     if (selectedPriceDataset) {
-      setFormData(prev => ({
+      updateFormData(prev => ({
         ...prev,
         multi_dataset_crossover_strategy: {
           ...prev.multi_dataset_crossover_strategy,
@@ -204,7 +204,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   };
 
   const updateTransform = (field: 'v' | 'usd', key: keyof TransformConfig, value: any) => {
-    setFormData(prev => ({
+    updateFormData(prev => ({
       ...prev,
       transform: {
         ...prev.transform,
@@ -217,7 +217,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   };
 
   const updateMultiDatasetStrategy = (field: string, value: any) => {
-    setFormData(prev => ({
+    updateFormData(prev => ({
       ...prev,
       multi_dataset_crossover_strategy: {
         ...prev.multi_dataset_crossover_strategy,
@@ -227,7 +227,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   };
 
   const updateBitcoinPriceCondition = (field: string, value: any) => {
-    setFormData(prev => ({
+    updateFormData(prev => ({
       ...prev,
       bitcoin_price_condition: {
         ...prev.bitcoin_price_condition,
@@ -316,7 +316,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                   </Label>
                   <Select
                     value={formData.period}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, period: value as any }))}
+                    onValueChange={(value) => updateFormData(prev => ({ ...prev, period: value as any }))}
                   >
                     <SelectTrigger className="h-10 w-full">
                       <SelectValue />
@@ -362,7 +362,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                       id="capital" 
                       type="number" 
                       value={formData.init_cash}
-                      onChange={(e) => setFormData(prev => ({ ...prev, init_cash: parseFloat(e.target.value) || 10000 }))}
+                      onChange={(e) => updateFormData(prev => ({ ...prev, init_cash: parseFloat(e.target.value) || 10000 }))}
                       className="h-10" 
                     />
                   </div>
@@ -375,7 +375,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                       type="number" 
                       step="0.001" 
                       value={formData.fees * 100}
-                      onChange={(e) => setFormData(prev => ({ ...prev, fees: (parseFloat(e.target.value) || 0) / 100 }))}
+                      onChange={(e) => updateFormData(prev => ({ ...prev, fees: (parseFloat(e.target.value) || 0) / 100 }))}
                       className="h-10" 
                     />
                   </div>
@@ -388,7 +388,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                       type="number" 
                       step="0.01" 
                       value={formData.slippage * 100}
-                      onChange={(e) => setFormData(prev => ({ ...prev, slippage: (parseFloat(e.target.value) || 0) / 100 }))}
+                      onChange={(e) => updateFormData(prev => ({ ...prev, slippage: (parseFloat(e.target.value) || 0) / 100 }))}
                       className="h-10" 
                     />
                   </div>
@@ -483,7 +483,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                 <Label className="text-sm font-medium text-gray-700">Tipo de Estrategia</Label>
                 <Select
                   value={formData.strategy_type}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, strategy_type: value as 'threshold' | 'crossover' | 'multi_dataset_crossover' }))}
+                  onValueChange={(value) => updateFormData(prev => ({ ...prev, strategy_type: value as 'threshold' | 'crossover' | 'multi_dataset_crossover' }))}
                 >
                   <SelectTrigger className="h-10 w-full">
                     <SelectValue />
@@ -502,7 +502,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                 </Label>
                 <Select
                   value={formData.apply_to}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, apply_to: value as 'v' | 'usd' }))}
+                  onValueChange={(value) => updateFormData(prev => ({ ...prev, apply_to: value as 'v' | 'usd' }))}
                 >
                   <SelectTrigger className="h-10 w-full">
                     <SelectValue />
@@ -529,7 +529,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                     <Input 
                       type="number" 
                       value={formData.threshold_entry}
-                      onChange={(e) => setFormData(prev => ({ ...prev, threshold_entry: parseFloat(e.target.value) || 0 }))}
+                      onChange={(e) => updateFormData(prev => ({ ...prev, threshold_entry: parseFloat(e.target.value) || 0 }))}
                       className="h-10" 
                     />
                   </div>
@@ -538,7 +538,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                     <Input 
                       type="number" 
                       value={formData.threshold_exit}
-                      onChange={(e) => setFormData(prev => ({ ...prev, threshold_exit: parseFloat(e.target.value) || 0 }))}
+                      onChange={(e) => updateFormData(prev => ({ ...prev, threshold_exit: parseFloat(e.target.value) || 0 }))}
                       className="h-10" 
                     />
                   </div>
@@ -558,7 +558,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Input 
                           type="number" 
                           value={formData.crossover_strategy.entry_fast_period}
-                          onChange={(e) => setFormData(prev => ({
+                          onChange={(e) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -573,7 +573,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Input 
                           type="number" 
                           value={formData.crossover_strategy.entry_slow_period}
-                          onChange={(e) => setFormData(prev => ({
+                          onChange={(e) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -587,7 +587,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Label className="text-sm font-medium text-gray-700">Tipo</Label>
                         <Select
                           value={formData.crossover_strategy.entry_type}
-                          onValueChange={(value) => setFormData(prev => ({
+                          onValueChange={(value) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -608,7 +608,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Label className="text-sm font-medium text-gray-700">↑ Dirección</Label>
                         <Select
                           value={formData.crossover_strategy.entry_direction}
-                          onValueChange={(value) => setFormData(prev => ({
+                          onValueChange={(value) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -639,7 +639,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Input 
                           type="number" 
                           value={formData.crossover_strategy.exit_fast_period}
-                          onChange={(e) => setFormData(prev => ({
+                          onChange={(e) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -654,7 +654,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Input 
                           type="number" 
                           value={formData.crossover_strategy.exit_slow_period}
-                          onChange={(e) => setFormData(prev => ({
+                          onChange={(e) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -668,7 +668,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Label className="text-sm font-medium text-gray-700">Tipo</Label>
                         <Select
                           value={formData.crossover_strategy.exit_type}
-                          onValueChange={(value) => setFormData(prev => ({
+                          onValueChange={(value) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
@@ -689,7 +689,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                         <Label className="text-sm font-medium text-gray-700">↓ Dirección</Label>
                         <Select
                           value={formData.crossover_strategy.exit_direction}
-                          onValueChange={(value) => setFormData(prev => ({
+                          onValueChange={(value) => updateFormData(prev => ({
                             ...prev,
                             crossover_strategy: {
                               ...prev.crossover_strategy,
