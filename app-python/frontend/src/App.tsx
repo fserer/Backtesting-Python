@@ -46,6 +46,56 @@ function AppContent() {
   const [lastBacktestResults, setLastBacktestResults] = useState<any>(null);
   const [selectedDatasetName, setSelectedDatasetName] = useState<string>('');
   const [selectedPeriodDescription, setSelectedPeriodDescription] = useState<string>('');
+  
+  // Estado global para persistir valores del formulario de backtest
+  const [backtestFormState, setBacktestFormState] = useState({
+    dataset_id: 0,
+    transform: {
+      v: { type: 'none' as const, period: 1 },
+      usd: { type: 'none' as const, period: 1 }
+    },
+    apply_to: 'v' as 'v' | 'usd',
+    strategy_type: 'threshold' as 'threshold' | 'crossover' | 'multi_dataset_crossover',
+    threshold_entry: 0,
+    threshold_exit: 0,
+    crossover_strategy: {
+      entry_fast_period: 7,
+      entry_slow_period: 30,
+      exit_fast_period: 7,
+      exit_slow_period: 14,
+      entry_type: 'sma' as 'sma' | 'ema',
+      exit_type: 'sma' as 'sma' | 'ema',
+      entry_direction: 'up' as 'up' | 'down',
+      exit_direction: 'down' as 'up' | 'down'
+    },
+    multi_dataset_crossover_strategy: {
+      dataset1_id: 0,
+      dataset1_indicator: 'v' as 'v' | 'usd',
+      dataset1_ma_type: 'sma' as 'sma' | 'ema',
+      dataset1_ma_period: 7,
+      dataset2_id: 0,
+      dataset2_indicator: 'v' as 'v' | 'usd',
+      dataset2_ma_type: 'sma' as 'sma' | 'ema',
+      dataset2_ma_period: 30,
+      entry_direction: 'up' as 'up' | 'down',
+      exit_direction: 'down' as 'up' | 'down',
+      price_dataset_id: 0,
+      take_profit_pct: 3.0,
+      stop_loss_pct: 1.0,
+      use_take_profit: true,
+      use_stop_loss: true
+    },
+    bitcoin_price_condition: {
+      enabled: false,
+      ma_type: 'sma' as 'sma' | 'ema',
+      ma_period: 50,
+      condition: 'above' as 'above' | 'below'
+    },
+    period: '1y' as '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | '2015' | '2016' | '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025' | 'all',
+    fees: 0.00045,
+    slippage: 0.0002,
+    init_cash: 10000
+  });
 
   const handleFileUpload = async (file: File, datasetName: string, datasetDescription?: string) => {
     setIsUploading(true);
@@ -65,6 +115,11 @@ function AppContent() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // Función para actualizar el estado del formulario desde ParamsForm
+  const updateBacktestFormState = (newState: any) => {
+    setBacktestFormState(newState);
   };
 
   const handleBacktest = async (params: any) => {
@@ -245,6 +300,8 @@ function AppContent() {
                 isRunning={isRunning}
                 selectedDataset={selectedDataset || undefined}
                 onDatasetSelect={setSelectedDataset}
+                formState={backtestFormState}
+                onFormStateChange={updateBacktestFormState}
               />
             </div>
 

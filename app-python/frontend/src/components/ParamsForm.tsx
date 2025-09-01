@@ -17,11 +17,18 @@ interface ParamsFormProps {
   isRunning: boolean;
   selectedDataset?: Dataset;
   onDatasetSelect?: (dataset: Dataset) => void;
+  formState?: any;
+  onFormStateChange?: (state: any) => void;
 }
 
-export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSelect }: ParamsFormProps) {
-  const [formData, setFormData] = React.useState({
-    dataset_id: 0,
+export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSelect, formState, onFormStateChange }: ParamsFormProps) {
+  const [formData, setFormData] = React.useState(() => {
+    // Usar el estado global si está disponible, sino usar valores por defecto
+    if (formState) {
+      return formState;
+    }
+    return {
+      dataset_id: 0,
     transform: {
       v: { type: 'none' as const, period: 1 },
       usd: { type: 'none' as const, period: 1 }
@@ -92,10 +99,22 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
     loadDatasets();
   }, []);
 
+  // Función para actualizar tanto el estado local como el global
+  const updateFormData = (updater: (prev: any) => any) => {
+    setFormData(prev => {
+      const newState = updater(prev);
+      // También actualizar el estado global si está disponible
+      if (onFormStateChange) {
+        onFormStateChange(newState);
+      }
+      return newState;
+    });
+  };
+
   // Actualizar dataset_id cuando cambie el dataset seleccionado
   React.useEffect(() => {
     if (selectedDataset) {
-      setFormData(prev => ({ ...prev, dataset_id: selectedDataset.id }));
+      updateFormData(prev => ({ ...prev, dataset_id: selectedDataset.id }));
     }
   }, [selectedDataset]);
 
