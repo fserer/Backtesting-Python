@@ -11,6 +11,7 @@ import { Settings, Play, Database, TrendingUp, TrendingDown, Calendar, ArrowUp, 
 import { TransformConfig, Dataset, CrossoverStrategy, MultiDatasetCrossoverStrategy, BitcoinPriceCondition } from '../lib/api';
 import { API_BASE_URL } from '../config';
 import { MultiDatasetSelector } from './MultiDatasetSelector';
+import { CompositeStrategyFlowBuilder } from './CompositeStrategyFlowBuilder';
 
 interface ParamsFormProps {
   onSubmit: (params: any) => void;
@@ -83,6 +84,10 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   const [selectedPriceDataset, setSelectedPriceDataset] = React.useState<Dataset | null>(null);
   const [datasets, setDatasets] = React.useState<Dataset[]>([]);
   const [datasetOpen, setDatasetOpen] = React.useState(false);
+  
+  // Estado para estrategia simple vs compuesta
+  const [strategyMode, setStrategyMode] = React.useState<'simple' | 'composite'>('simple');
+  const [compositeStrategy, setCompositeStrategy] = React.useState<any>(null);
 
   // Cargar datasets al montar el componente
   React.useEffect(() => {
@@ -193,7 +198,17 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Añadir nombre del dataset y descripción del período
+    if (strategyMode === 'composite') {
+      // Para estrategias compuestas, usar el Flow Builder
+      if (compositeStrategy) {
+        onSubmit(compositeStrategy);
+      } else {
+        alert('Por favor, construye una estrategia compuesta primero');
+      }
+      return;
+    }
+    
+    // Para estrategias simples, usar el formulario tradicional
     const paramsWithMetadata = {
       ...formData,
       dataset_name: selectedDataset?.name || '',
@@ -246,6 +261,48 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Selector de Modo de Estrategia */}
+        <Card className="border-indigo-100 shadow-sm">
+          <div className="bg-indigo-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+            <div className="flex items-center gap-2 text-lg text-indigo-900 font-semibold">
+              <Target className="h-5 w-5" />
+              Modo de Estrategia
+            </div>
+          </div>
+          <CardContent className="px-4 py-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="simple-strategy"
+                  name="strategy-mode"
+                  value="simple"
+                  checked={strategyMode === 'simple'}
+                  onChange={(e) => setStrategyMode(e.target.value as 'simple' | 'composite')}
+                  className="h-4 w-4 text-indigo-600"
+                />
+                <Label htmlFor="simple-strategy" className="text-sm font-medium text-gray-700">
+                  Estrategia Simple
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="composite-strategy"
+                  name="strategy-mode"
+                  value="composite"
+                  checked={strategyMode === 'composite'}
+                  onChange={(e) => setStrategyMode(e.target.value as 'simple' | 'composite')}
+                  className="h-4 w-4 text-indigo-600"
+                />
+                <Label htmlFor="composite-strategy" className="text-sm font-medium text-gray-700">
+                  Estrategia Compuesta (Flow Builder)
+                </Label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-blue-100 shadow-sm">
           <div className="bg-blue-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
             <div className="flex items-center gap-2 text-lg text-blue-900 font-semibold">
@@ -470,13 +527,15 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
           </CardContent>
         </Card>
 
-        <Card className="border-purple-100 shadow-sm">
-          <div className="bg-purple-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
-            <div className="flex items-center gap-2 text-lg text-purple-900 font-semibold">
-              <Settings className="h-5 w-5" />
-              Estrategia de backtesting
+        {/* Estrategia de backtesting - Solo visible en modo simple */}
+        {strategyMode === 'simple' && (
+          <Card className="border-purple-100 shadow-sm">
+            <div className="bg-purple-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+              <div className="flex items-center gap-2 text-lg text-purple-900 font-semibold">
+                <Settings className="h-5 w-5" />
+                Estrategia de backtesting
+              </div>
             </div>
-          </div>
           <CardContent className="px-4 py-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -800,6 +859,15 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
             </div>
           </CardContent>
         </Card>
+        )}
+
+        {/* Flow Builder para Estrategias Compuestas */}
+        {strategyMode === 'composite' && (
+          <CompositeStrategyFlowBuilder
+            datasets={datasets}
+            onStrategyChange={setCompositeStrategy}
+          />
+        )}
 
         <div className="flex justify-center pt-2">
           <Button
@@ -808,9 +876,10 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-medium"
             disabled={
               isRunning || 
-              !selectedDataset || 
-              (formData.strategy_type === 'multi_dataset_crossover' && 
-               (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset))
+              (strategyMode === 'simple' && !selectedDataset) ||
+              (strategyMode === 'simple' && formData.strategy_type === 'multi_dataset_crossover' && 
+               (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset)) ||
+              (strategyMode === 'composite' && !compositeStrategy)
             }
           >
             {isRunning ? (
@@ -821,9 +890,11 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
             ) : (
               <>
                 <Play className="h-4 w-4 mr-2" />
-                {!selectedDataset ? 'Selecciona un Dataset' : 
-                 formData.strategy_type === 'multi_dataset_crossover' && (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset) ? 
-                 'Selecciona todos los Datasets' : 'Ejecutar Backtest'}
+                {strategyMode === 'composite' ? 
+                  (!compositeStrategy ? 'Construye una Estrategia Compuesta' : 'Ejecutar Backtest Compuesto') :
+                  !selectedDataset ? 'Selecciona un Dataset' : 
+                  formData.strategy_type === 'multi_dataset_crossover' && (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset) ? 
+                  'Selecciona todos los Datasets' : 'Ejecutar Backtest'}
               </>
             )}
           </Button>
