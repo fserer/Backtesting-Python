@@ -278,11 +278,12 @@ function AppContent() {
   // Mostrar dashboard si está autenticado
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header 
-        currentUser={currentUser}
-        onProfileClick={() => setCurrentPage('profile')}
-        onLogout={handleLogout}
-      />
+              <Header 
+          currentUser={currentUser}
+          onProfileClick={() => setCurrentPage('profile')}
+          onLogout={handleLogout}
+          onLogoClick={() => setCurrentPage('backtesting')}
+        />
       <Menu 
         currentPage={currentPage}
         onPageChange={setCurrentPage}
