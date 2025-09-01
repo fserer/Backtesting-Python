@@ -480,8 +480,8 @@ function StrategyConditionConfig({
         </div>
       )}
 
-      {/* Transformaciones - Solo para estrategias que no sean crossover */}
-      {condition.type !== 'crossover' && (
+      {/* Transformaciones - Solo para estrategias que no sean crossover o multi_dataset_crossover */}
+      {condition.type !== 'crossover' && condition.type !== 'multi_dataset_crossover' && (
         <div className="space-y-3">
           <Label className="text-sm font-medium text-gray-700">Transformaciones</Label>
           <div className="grid grid-cols-4 gap-4">
@@ -749,6 +749,332 @@ function StrategyConditionConfig({
                     <SelectItem value="down">A la Baja</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Configuración para Cruce entre Datasets */}
+      {condition.type === 'multi_dataset_crossover' && (
+        <div className="space-y-6">
+          {/* Selección de Datasets */}
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900">Selección de Datasets</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Dataset 1 (Principal)</Label>
+                <Select 
+                  value={condition.multi_dataset_crossover_strategy?.dataset1_id.toString() || ''} 
+                  onValueChange={(value) => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset1_id: parseInt(value)
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Seleccionar dataset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datasets.map(dataset => (
+                      <SelectItem key={dataset.id} value={dataset.id.toString()}>
+                        {dataset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Dataset 2 (Secundario)</Label>
+                <Select 
+                  value={condition.multi_dataset_crossover_strategy?.dataset2_id.toString() || ''} 
+                  onValueChange={(value) => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset2_id: parseInt(value)
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Seleccionar dataset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datasets.map(dataset => (
+                      <SelectItem key={dataset.id} value={dataset.id.toString()}>
+                        {dataset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Dataset Precios (USD)</Label>
+                <Select 
+                  value={condition.multi_dataset_crossover_strategy?.price_dataset_id.toString() || ''} 
+                  onValueChange={(value) => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      price_dataset_id: parseInt(value)
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Seleccionar dataset" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {datasets.map(dataset => (
+                      <SelectItem key={dataset.id} value={dataset.id.toString()}>
+                        {dataset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuración Dataset 1 */}
+          <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+            <h4 className="font-medium text-blue-900">Configuración Dataset 1</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Indicador</Label>
+                <Select
+                  value={condition.multi_dataset_crossover_strategy?.dataset1_indicator || 'v'}
+                  onValueChange={(value: 'v' | 'usd') => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset1_indicator: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="v">Indicador (v)</SelectItem>
+                    <SelectItem value="usd">Precio (USD)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Tipo Media</Label>
+                <Select
+                  value={condition.multi_dataset_crossover_strategy?.dataset1_ma_type || 'sma'}
+                  onValueChange={(value: 'sma' | 'ema') => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset1_ma_type: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sma">SMA</SelectItem>
+                    <SelectItem value="ema">EMA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Período</Label>
+                <Input
+                  type="number"
+                  value={condition.multi_dataset_crossover_strategy?.dataset1_ma_period || 7}
+                  onChange={(e) => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset1_ma_period: parseInt(e.target.value) || 7
+                    }
+                  })}
+                  className="h-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Configuración Dataset 2 */}
+          <div className="bg-green-50 p-4 rounded-lg space-y-3">
+            <h4 className="font-medium text-green-900">Configuración Dataset 2</h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Indicador</Label>
+                <Select
+                  value={condition.multi_dataset_crossover_strategy?.dataset2_indicator || 'v'}
+                  onValueChange={(value: 'v' | 'usd') => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset2_indicator: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="v">Indicador (v)</SelectItem>
+                    <SelectItem value="usd">Precio (USD)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Tipo Media</Label>
+                <Select
+                  value={condition.multi_dataset_crossover_strategy?.dataset2_ma_type || 'sma'}
+                  onValueChange={(value: 'sma' | 'ema') => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset2_ma_type: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sma">SMA</SelectItem>
+                    <SelectItem value="ema">EMA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Período</Label>
+                <Input
+                  type="number"
+                  value={condition.multi_dataset_crossover_strategy?.dataset2_ma_period || 30}
+                  onChange={(e) => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      dataset2_ma_period: parseInt(e.target.value) || 30
+                    }
+                  })}
+                  className="h-10"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Señales de Cruce */}
+          <div className="bg-indigo-50 p-4 rounded-lg space-y-3">
+            <h4 className="font-medium text-indigo-900">Señales de Cruce</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Señal de Entrada</Label>
+                <Select
+                  value={condition.multi_dataset_crossover_strategy?.entry_direction || 'up'}
+                  onValueChange={(value: 'up' | 'down') => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      entry_direction: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="up">Al Alza (Dataset 1 cruza de abajo hacia arriba)</SelectItem>
+                    <SelectItem value="down">A la Baja (Dataset 1 cruza de arriba hacia abajo)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Señal de Salida</Label>
+                <Select
+                  value={condition.multi_dataset_crossover_strategy?.exit_direction || 'down'}
+                  onValueChange={(value: 'up' | 'down') => onUpdate({
+                    multi_dataset_crossover_strategy: {
+                      ...condition.multi_dataset_crossover_strategy!,
+                      exit_direction: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="up">Al Alza (Dataset 1 cruza de abajo hacia arriba)</SelectItem>
+                    <SelectItem value="down">A la Baja (Dataset 1 cruza de arriba hacia abajo)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Take Profit y Stop Loss */}
+          <div className="bg-orange-50 p-4 rounded-lg space-y-3">
+            <h4 className="font-medium text-orange-900">$ Take Profit y Stop Loss</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Take Profit</Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={condition.multi_dataset_crossover_strategy?.use_take_profit || false}
+                    onCheckedChange={(checked: boolean) => onUpdate({
+                      multi_dataset_crossover_strategy: {
+                        ...condition.multi_dataset_crossover_strategy!,
+                        use_take_profit: checked
+                      }
+                    })}
+                  />
+                  <Label className="text-sm">Activar</Label>
+                </div>
+                {condition.multi_dataset_crossover_strategy?.use_take_profit && (
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={condition.multi_dataset_crossover_strategy?.take_profit_pct || 3.0}
+                    onChange={(e) => onUpdate({
+                      multi_dataset_crossover_strategy: {
+                        ...condition.multi_dataset_crossover_strategy!,
+                        take_profit_pct: parseFloat(e.target.value) || 3.0
+                      }
+                    })}
+                    className="h-10"
+                    placeholder="3.0"
+                  />
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Stop Loss</Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    checked={condition.multi_dataset_crossover_strategy?.use_stop_loss || false}
+                    onCheckedChange={(checked: boolean) => onUpdate({
+                      multi_dataset_crossover_strategy: {
+                        ...condition.multi_dataset_crossover_strategy!,
+                        use_stop_loss: checked
+                      }
+                    })}
+                  />
+                  <Label className="text-sm">Activar</Label>
+                </div>
+                {condition.multi_dataset_crossover_strategy?.use_stop_loss && (
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={condition.multi_dataset_crossover_strategy?.stop_loss_pct || 1.0}
+                    onChange={(e) => onUpdate({
+                      multi_dataset_crossover_strategy: {
+                        ...condition.multi_dataset_crossover_strategy!,
+                        stop_loss_pct: parseFloat(e.target.value) || 1.0
+                      }
+                    })}
+                    className="h-10"
+                    placeholder="1.0"
+                  />
+                )}
               </div>
             </div>
           </div>
