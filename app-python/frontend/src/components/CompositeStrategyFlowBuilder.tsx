@@ -461,93 +461,114 @@ function StrategyConditionConfig({
         </div>
       </div>
 
-      {/* Transformaciones */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium text-gray-700">Transformaciones</Label>
-        <div className="grid grid-cols-4 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs text-gray-600">Indicador (v)</Label>
-            <Select
-              value={condition.transform.v.type}
-              onValueChange={(value: 'none' | 'sma' | 'ema' | 'median') => 
-                onUpdate({
+      {/* Campo "Aplicar cruces sobre" solo para crossover */}
+      {condition.type === 'crossover' && (
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-gray-700">Aplicar cruces sobre:</Label>
+          <Select 
+            value={condition.apply_to} 
+            onValueChange={(value: 'v' | 'usd') => onUpdate({ apply_to: value })}
+          >
+            <SelectTrigger className="h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="v">Indicador (v)</SelectItem>
+              <SelectItem value="usd">Precio (USD)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Transformaciones - Solo para estrategias que no sean crossover */}
+      {condition.type !== 'crossover' && (
+        <div className="space-y-3">
+          <Label className="text-sm font-medium text-gray-700">Transformaciones</Label>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-600">Indicador (v)</Label>
+              <Select
+                value={condition.transform.v.type}
+                onValueChange={(value: 'none' | 'sma' | 'ema' | 'median') => 
+                  onUpdate({
+                    transform: {
+                      ...condition.transform,
+                      v: { ...condition.transform.v, type: value }
+                    }
+                  })
+                }
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Ninguna</SelectItem>
+                  <SelectItem value="sma">SMA</SelectItem>
+                  <SelectItem value="ema">EMA</SelectItem>
+                  <SelectItem value="median">Mediana</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-600">Período</Label>
+              <Input
+                type="number"
+                value={condition.transform.v.period}
+                onChange={(e) => onUpdate({
                   transform: {
                     ...condition.transform,
-                    v: { ...condition.transform.v, type: value }
+                    v: { ...condition.transform.v, period: parseInt(e.target.value) || 1 }
                   }
-                })
-              }
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Ninguna</SelectItem>
-                <SelectItem value="sma">SMA</SelectItem>
-                <SelectItem value="ema">EMA</SelectItem>
-                <SelectItem value="median">Mediana</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-xs text-gray-600">Período</Label>
-            <Input
-              type="number"
-              value={condition.transform.v.period}
-              onChange={(e) => onUpdate({
-                transform: {
-                  ...condition.transform,
-                  v: { ...condition.transform.v, period: parseInt(e.target.value) || 1 }
+                })}
+                disabled={condition.transform.v.type === 'none'}
+                className="h-8"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-600">Precio (USD)</Label>
+              <Select
+                value={condition.transform.usd.type}
+                onValueChange={(value: 'none' | 'sma' | 'ema' | 'median') => 
+                  onUpdate({
+                    transform: {
+                      ...condition.transform,
+                      usd: { ...condition.transform.usd, type: value }
+                    }
+                  })
                 }
-              })}
-              disabled={condition.transform.v.type === 'none'}
-              className="h-8"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-xs text-gray-600">Precio (USD)</Label>
-            <Select
-              value={condition.transform.usd.type}
-              onValueChange={(value: 'none' | 'sma' | 'ema' | 'median') => 
-                onUpdate({
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Ninguna</SelectItem>
+                  <SelectItem value="sma">SMA</SelectItem>
+                  <SelectItem value="ema">EMA</SelectItem>
+                  <SelectItem value="median">Mediana</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-600">Período</Label>
+              <Input
+                type="number"
+                value={condition.transform.usd.period}
+                onChange={(e) => onUpdate({
                   transform: {
                     ...condition.transform,
-                    usd: { ...condition.transform.usd, type: value }
+                    usd: { ...condition.transform.usd, period: parseInt(e.target.value) || 1 }
                   }
-                })
-              }
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Ninguna</SelectItem>
-                <SelectItem value="sma">SMA</SelectItem>
-                <SelectItem value="ema">EMA</SelectItem>
-                <SelectItem value="median">Mediana</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label className="text-xs text-gray-600">Período</Label>
-            <Input
-              type="number"
-              value={condition.transform.usd.period}
-              onChange={(e) => onUpdate({
-                transform: {
-                  ...condition.transform,
-                  usd: { ...condition.transform.usd, period: parseInt(e.target.value) || 1 }
-                }
-              })}
-              disabled={condition.transform.usd.type === 'none'}
-              className="h-8"
-            />
+                })}
+                disabled={condition.transform.usd.type === 'none'}
+                className="h-8"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Configuración específica según el tipo */}
       {condition.type === 'threshold' && (
