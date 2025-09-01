@@ -414,17 +414,12 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
         </CardContent>
       </Card>
 
-      {/* Botón para construir la estrategia */}
-      {conditions.length > 0 && (
-        <div className="flex justify-center">
-          <Button
-            onClick={buildStrategy}
-            size="lg"
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 text-lg font-medium"
-          >
-            <Zap className="h-5 w-5 mr-2" />
-            Construir Estrategia Compuesta
-          </Button>
+      {/* La estrategia se construye automáticamente al cambiar parámetros */}
+      {conditions.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <Target className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+          <p className="text-lg font-medium">Añade tu primera condición para comenzar</p>
+          <p className="text-sm">La estrategia se construye automáticamente</p>
         </div>
       )}
     </div>
