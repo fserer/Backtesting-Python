@@ -162,8 +162,6 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
       // Para estrategias compuestas, usar el Flow Builder
       if (compositeStrategy) {
         onSubmit(compositeStrategy);
-      } else {
-        alert('Por favor, construye una estrategia compuesta primero');
       }
       return;
     }
