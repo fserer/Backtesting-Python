@@ -79,6 +79,16 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
     slippage: 0.0002
   });
 
+  // Función para actualizar parámetros comunes y reconstruir la estrategia
+  const updateCommonParams = (updates: Partial<typeof commonParams>) => {
+    setCommonParams(prev => {
+      const newParams = { ...prev, ...updates };
+      // Construir y enviar la estrategia actualizada
+      setTimeout(() => buildStrategy(), 0);
+      return newParams;
+    });
+  };
+
   const addCondition = () => {
     const newCondition: StrategyCondition = {
       id: `condition-${Date.now()}`,
@@ -127,17 +137,32 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
       logic: 'AND'
     };
     
-    setConditions(prev => [...prev, newCondition]);
+    setConditions(prev => {
+      const newConditions = [...prev, newCondition];
+      // Construir y enviar la estrategia actualizada
+      setTimeout(() => buildStrategy(newConditions), 0);
+      return newConditions;
+    });
   };
 
   const removeCondition = (id: string) => {
-    setConditions(prev => prev.filter(c => c.id !== id));
+    setConditions(prev => {
+      const newConditions = prev.filter(c => c.id !== id);
+      // Construir y enviar la estrategia actualizada
+      setTimeout(() => buildStrategy(newConditions), 0);
+      return newConditions;
+    });
   };
 
   const updateCondition = (id: string, updates: Partial<StrategyCondition>) => {
-    setConditions(prev => prev.map(c => 
-      c.id === id ? { ...c, ...updates } : c
-    ));
+    setConditions(prev => {
+      const newConditions = prev.map(c => 
+        c.id === id ? { ...c, ...updates } : c
+      );
+      // Construir y enviar la estrategia actualizada
+      setTimeout(() => buildStrategy(newConditions), 0);
+      return newConditions;
+    });
   };
 
   const moveCondition = (fromIndex: number, toIndex: number) => {
@@ -145,14 +170,17 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
       const newConditions = [...prev];
       const [movedCondition] = newConditions.splice(fromIndex, 1);
       newConditions.splice(toIndex, 0, movedCondition);
+      // Construir y enviar la estrategia actualizada
+      setTimeout(() => buildStrategy(newConditions), 0);
       return newConditions;
     });
   };
 
-  const buildStrategy = () => {
+  const buildStrategy = (conditionsToUse?: StrategyCondition[]) => {
+    const conditionsToBuild = conditionsToUse || conditions;
     const strategy = {
       ...commonParams,
-      conditions: conditions.map(c => ({
+      conditions: conditionsToBuild.map(c => ({
         type: c.type,
         dataset_id: c.dataset_id,
         transform: c.transform,
@@ -189,10 +217,10 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-blue-900">Período</Label>
-              <Select 
-                value={commonParams.period} 
-                onValueChange={(value: any) => setCommonParams(prev => ({ ...prev, period: value }))}
-              >
+                                  <Select
+                      value={commonParams.period}
+                      onValueChange={(value: any) => updateCommonParams({ period: value })}
+                    >
                 <SelectTrigger className="h-10">
                   <SelectValue />
                 </SelectTrigger>
@@ -226,23 +254,23 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
             
             <div className="space-y-2">
               <Label className="text-sm font-medium text-blue-900">Capital Inicial</Label>
-              <Input
-                type="number"
-                value={commonParams.init_cash}
-                onChange={(e) => setCommonParams(prev => ({ ...prev, init_cash: parseFloat(e.target.value) || 10000 }))}
-                className="h-10"
-              />
+                                    <Input 
+                        type="number" 
+                        value={commonParams.init_cash}
+                        onChange={(e) => updateCommonParams({ init_cash: parseFloat(e.target.value) || 10000 })}
+                        className="h-10" 
+                      />
             </div>
             
             <div className="space-y-2">
               <Label className="text-sm font-medium text-blue-900">Comisiones</Label>
-              <Input
-                type="number"
-                step="0.00001"
-                value={commonParams.fees}
-                onChange={(e) => setCommonParams(prev => ({ ...prev, fees: parseFloat(e.target.value) || 0.00045 }))}
-                className="h-10"
-              />
+                                    <Input 
+                        type="number" 
+                        step="0.00001" 
+                        value={commonParams.fees}
+                        onChange={(e) => updateCommonParams({ fees: parseFloat(e.target.value) || 0.00045 })}
+                        className="h-10" 
+                      />
             </div>
             
             <div className="space-y-2">
@@ -251,7 +279,7 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
                 type="number"
                 step="0.00001"
                 value={commonParams.slippage}
-                onChange={(e) => setCommonParams(prev => ({ ...prev, slippage: parseFloat(e.target.value) || 0.0002 }))}
+                                        onChange={(e) => updateCommonParams({ slippage: parseFloat(e.target.value) || 0.0002 })}
                 className="h-10"
               />
             </div>
