@@ -583,7 +583,7 @@ function StrategyConditionConfig({
               <TrendingUp className="h-4 w-4 text-green-600" />
               <h4 className="font-medium text-green-900">Señales de Entrada</h4>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs text-gray-600">Período Rápido</Label>
                 <Input
@@ -612,6 +612,46 @@ function StrategyConditionConfig({
                   className="h-8"
                 />
               </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Tipo</Label>
+                <Select
+                  value={condition.crossover_strategy?.entry_type}
+                  onValueChange={(value: 'sma' | 'ema') => onUpdate({
+                    crossover_strategy: {
+                      ...condition.crossover_strategy!,
+                      entry_type: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sma">SMA</SelectItem>
+                    <SelectItem value="ema">EMA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">↑ Dirección</Label>
+                <Select
+                  value={condition.crossover_strategy?.entry_direction}
+                  onValueChange={(value: 'up' | 'down') => onUpdate({
+                    crossover_strategy: {
+                      ...condition.crossover_strategy!,
+                      entry_direction: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="up">Al Alza</SelectItem>
+                    <SelectItem value="down">A la Baja</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -620,7 +660,7 @@ function StrategyConditionConfig({
               <TrendingDown className="h-4 w-4 text-red-600" />
               <h4 className="font-medium text-red-900">Señales de Salida</h4>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs text-gray-600">Período Rápido</Label>
                 <Input
@@ -648,6 +688,46 @@ function StrategyConditionConfig({
                   })}
                   className="h-8"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">Tipo</Label>
+                <Select
+                  value={condition.crossover_strategy?.exit_type}
+                  onValueChange={(value: 'sma' | 'ema') => onUpdate({
+                    crossover_strategy: {
+                      ...condition.crossover_strategy!,
+                      exit_type: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sma">SMA</SelectItem>
+                    <SelectItem value="ema">EMA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600">↓ Dirección</Label>
+                <Select
+                  value={condition.crossover_strategy?.exit_direction}
+                  onValueChange={(value: 'up' | 'down') => onUpdate({
+                    crossover_strategy: {
+                      ...condition.crossover_strategy!,
+                      exit_direction: value
+                    }
+                  })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="up">Al Alza</SelectItem>
+                    <SelectItem value="down">A la Baja</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

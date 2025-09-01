@@ -551,6 +551,172 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
                     </div>
                   )}
 
+                  {formData.strategy_type === 'crossover' && (
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-green-600" />
+                          <h4 className="font-medium text-green-700">Señales de Entrada</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Período Rápido</Label>
+                            <Input 
+                              type="number" 
+                              value={formData.crossover_strategy.entry_fast_period}
+                              onChange={(e) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  entry_fast_period: parseInt(e.target.value) || 7
+                                }
+                              }))}
+                              className="h-10" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Período Lento</Label>
+                            <Input 
+                              type="number" 
+                              value={formData.crossover_strategy.entry_slow_period}
+                              onChange={(e) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  entry_slow_period: parseInt(e.target.value) || 30
+                                }
+                              }))}
+                              className="h-10" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Tipo</Label>
+                            <Select
+                              value={formData.crossover_strategy.entry_type}
+                              onValueChange={(value) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  entry_type: value as 'sma' | 'ema'
+                                }
+                              }))}
+                            >
+                              <SelectTrigger className="h-10 w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sma">SMA</SelectItem>
+                                <SelectItem value="ema">EMA</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">↑ Dirección</Label>
+                            <Select
+                              value={formData.crossover_strategy.entry_direction}
+                              onValueChange={(value) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  entry_direction: value as 'up' | 'down'
+                                }
+                              }))}
+                            >
+                              <SelectTrigger className="h-10 w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="up">Al Alza</SelectItem>
+                                <SelectItem value="down">A la Baja</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="h-4 w-4 text-red-600" />
+                          <h4 className="font-medium text-red-700">Señales de Salida</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Período Rápido</Label>
+                            <Input 
+                              type="number" 
+                              value={formData.crossover_strategy.exit_fast_period}
+                              onChange={(e) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  exit_fast_period: parseInt(e.target.value) || 7
+                                }
+                              }))}
+                              className="h-10" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Período Lento</Label>
+                            <Input 
+                              type="number" 
+                              value={formData.crossover_strategy.exit_slow_period}
+                              onChange={(e) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  exit_slow_period: parseInt(e.target.value) || 14
+                                }
+                              }))}
+                              className="h-10" 
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Tipo</Label>
+                            <Select
+                              value={formData.crossover_strategy.exit_type}
+                              onValueChange={(value) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  exit_type: value as 'sma' | 'ema'
+                                }
+                              }))}
+                            >
+                              <SelectTrigger className="h-10 w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sma">SMA</SelectItem>
+                                <SelectItem value="ema">EMA</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">↓ Dirección</Label>
+                            <Select
+                              value={formData.crossover_strategy.exit_direction}
+                              onValueChange={(value) => updateFormData((prev: any) => ({
+                                ...prev,
+                                crossover_strategy: {
+                                  ...prev.crossover_strategy,
+                                  exit_direction: value as 'up' | 'down'
+                                }
+                              }))}
+                            >
+                              <SelectTrigger className="h-10 w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="up">Al Alza</SelectItem>
+                                <SelectItem value="down">A la Baja</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                                      {formData.strategy_type === 'multi_dataset_crossover' && (
                      <MultiDatasetSelector
                        datasets={datasets}
