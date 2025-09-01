@@ -129,8 +129,7 @@ def generate_composite_signals(conditions: List, period: str) -> pd.DataFrame:
                 condition.type,
                 condition.crossover_strategy.dict() if condition.crossover_strategy else None,
                 condition.multi_dataset_crossover_strategy.dict() if condition.multi_dataset_crossover_strategy else None,
-                condition.bitcoin_price_condition.dict() if condition.bitcoin_price_condition else None,
-                period
+                condition.bitcoin_price_condition.dict() if condition.bitcoin_price_condition else None
             )
             
             # Alinear índices (puede haber diferencias de timestamps entre datasets)
