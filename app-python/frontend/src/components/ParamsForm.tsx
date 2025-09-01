@@ -303,14 +303,16 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
           </CardContent>
         </Card>
 
-        <Card className="border-blue-100 shadow-sm">
-          <div className="bg-blue-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
-            <div className="flex items-center gap-2 text-lg text-blue-900 font-semibold">
-              <BarChart3 className="h-5 w-5" />
-              Parámetros del backtest
+        {/* Parámetros del Backtest - Solo visible en modo simple */}
+        {strategyMode === 'simple' && (
+          <Card className="border-blue-100 shadow-sm">
+            <div className="bg-blue-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+              <div className="flex items-center gap-2 text-lg text-blue-900 font-semibold">
+                <BarChart3 className="h-5 w-5" />
+                Parámetros del backtest
+              </div>
             </div>
-          </div>
-          <CardContent className="px-4 py-6 space-y-4">
+            <CardContent className="px-4 py-6 space-y-4">
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="dataset" className="text-sm font-medium text-gray-700">
@@ -526,6 +528,82 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
             </div>
           </CardContent>
         </Card>
+        )}
+
+        {/* Transformaciones - Solo visible en modo simple */}
+        {strategyMode === 'simple' && (
+          <Card className="border-green-100 shadow-sm">
+            <div className="bg-green-50/50 min-h-[3rem] flex items-center px-6 py-3 rounded-t-lg">
+              <div className="flex items-center gap-2 text-lg text-green-900 font-semibold">
+                <TrendingUp className="h-5 w-5" />
+                Transformaciones
+              </div>
+            </div>
+            <CardContent className="px-4 py-6 space-y-4">
+              <div className="grid grid-cols-4 gap-4 relative">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Indicador (v)</Label>
+                  <Select
+                    value={formData.transform.v.type}
+                    onValueChange={(value) => updateTransform('v', 'type', value)}
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Ninguna</SelectItem>
+                      <SelectItem value="sma">SMA</SelectItem>
+                      <SelectItem value="ema">EMA</SelectItem>
+                      <SelectItem value="median">Mediana</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Período</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.transform.v.period}
+                    onChange={(e) => updateTransform('v', 'period', parseInt(e.target.value) || 1)}
+                    disabled={formData.transform.v.type === 'none'}
+                    className="h-10" 
+                  />
+                </div>
+
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-300 transform -translate-x-px"></div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Precio (USD)</Label>
+                  <Select
+                    value={formData.transform.usd.type}
+                    onValueChange={(value) => updateTransform('usd', 'type', value)}
+                  >
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Ninguna</SelectItem>
+                      <SelectItem value="sma">SMA</SelectItem>
+                      <SelectItem value="ema">EMA</SelectItem>
+                      <SelectItem value="median">Mediana</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Período</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.transform.usd.period}
+                    onChange={(e) => updateTransform('usd', 'period', parseInt(e.target.value) || 1)}
+                    disabled={formData.transform.usd.type === 'none'}
+                    className="h-10" 
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Estrategia de backtesting - Solo visible en modo simple */}
         {strategyMode === 'simple' && (
