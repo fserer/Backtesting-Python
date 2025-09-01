@@ -96,6 +96,30 @@ export interface BacktestRequest {
   override_freq?: string;
 }
 
+export interface CompositeStrategyCondition {
+  type: 'threshold' | 'crossover' | 'multi_dataset_crossover';
+  dataset_id: number;
+  transform: {
+    v: TransformConfig;
+    usd: TransformConfig;
+  };
+  apply_to: 'v' | 'usd';
+  threshold_entry?: number;
+  threshold_exit?: number;
+  crossover_strategy?: CrossoverStrategy;
+  multi_dataset_crossover_strategy?: MultiDatasetCrossoverStrategy;
+  bitcoin_price_condition: BitcoinPriceCondition;
+  logic: 'AND' | 'OR';
+}
+
+export interface CompositeBacktestRequest {
+  period: '1w' | '1m' | '3m' | '6m' | '1y' | 'ytd' | '2y' | '4y' | '6y' | '8y' | '10y' | '2015' | '2016' | '2017' | '2018' | '2019' | '2020' | '2021' | '2022' | '2023' | '2024' | '2025' | 'all';
+  init_cash: number;
+  fees: number;
+  slippage: number;
+  conditions: CompositeStrategyCondition[];
+}
+
 export interface BacktestResults {
   total_return: number;
   sharpe: number;
@@ -217,6 +241,23 @@ export class ApiClient {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Error al ejecutar el backtest');
+    }
+
+    return response.json();
+  }
+
+  async runCompositeBacktest(request: CompositeBacktestRequest): Promise<BacktestResponse> {
+    const response = await fetch(`${this.baseUrl}/api/backtest/composite`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Error al ejecutar el backtest compuesto');
     }
 
     return response.json();

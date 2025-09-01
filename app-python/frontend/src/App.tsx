@@ -122,24 +122,72 @@ function AppContent() {
     setBacktestFormState(newState);
   };
 
+  // Función para obtener descripción del período
+  const getPeriodDescription = (period: string) => {
+    const periodMap: { [key: string]: string } = {
+      '1w': 'Última semana',
+      '1m': 'Último mes',
+      '3m': 'Últimos 3 meses',
+      '6m': 'Últimos 6 meses',
+      '1y': 'Último año',
+      'ytd': 'Año hasta la fecha',
+      '2y': 'Últimos 2 años',
+      '4y': 'Últimos 4 años',
+      '6y': 'Últimos 6 años',
+      '8y': 'Últimos 8 años',
+      '10y': 'Últimos 10 años',
+      '2025': 'Año 2025',
+      '2024': 'Año 2024',
+      '2023': 'Año 2023',
+      '2022': 'Año 2022',
+      '2021': 'Año 2021',
+      '2020': 'Año 2020',
+      '2019': 'Año 2019',
+      '2018': 'Año 2018',
+      '2017': 'Año 2017',
+      '2016': 'Año 2016',
+      '2015': 'Año 2015',
+      'all': 'Todo el tiempo'
+    };
+    return periodMap[period] || period;
+  };
+
   const handleBacktest = async (params: any) => {
     setIsRunning(true);
     try {
+      // Determinar si es estrategia simple o compuesta
+      const isCompositeStrategy = params.conditions && Array.isArray(params.conditions);
+      
       // Guardar el capital inicial para mostrarlo en los KPIs
       setInitialCapital(params.init_cash);
-      const result = await apiClient.runBacktest(params);
+      
+      let result;
+      if (isCompositeStrategy) {
+        // Para estrategias compuestas, usar endpoint específico
+        result = await apiClient.runCompositeBacktest(params);
+      } else {
+        // Para estrategias simples, usar endpoint tradicional
+        result = await apiClient.runBacktest(params);
+      }
+      
       setBacktestResult(result);
       
       // Guardar configuración y resultados para poder guardar la estrategia
       setLastBacktestConfig(params);
       setLastBacktestResults(result);
       
-      // Guardar nombre del dataset y descripción del período
-      if (params.dataset_name) {
-        setSelectedDatasetName(params.dataset_name);
-      }
-      if (params.period_description) {
-        setSelectedPeriodDescription(params.period_description);
+      // Guardar nombre del dataset y descripción del período (solo para estrategias simples)
+      if (!isCompositeStrategy) {
+        if (params.dataset_name) {
+          setSelectedDatasetName(params.dataset_name);
+        }
+        if (params.period_description) {
+          setSelectedPeriodDescription(params.period_description);
+        }
+      } else {
+        // Para estrategias compuestas, generar descripción
+        setSelectedDatasetName('Estrategia Compuesta');
+        setSelectedPeriodDescription(getPeriodDescription(params.period));
       }
     } catch (error) {
       console.error('Error running backtest:', error);
