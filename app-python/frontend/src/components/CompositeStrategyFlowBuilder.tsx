@@ -83,8 +83,31 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
   const updateCommonParams = (updates: Partial<typeof commonParams>) => {
     setCommonParams(prev => {
       const newParams = { ...prev, ...updates };
-      // Construir y enviar la estrategia actualizada
-      setTimeout(() => buildStrategy(), 0);
+      // Construir y enviar la estrategia actualizada con los nuevos parámetros
+      setTimeout(() => {
+        const updatedStrategy = {
+          ...newParams,
+          conditions: conditions.map(c => ({
+            type: c.type,
+            dataset_id: c.dataset_id,
+            transform: c.transform,
+            apply_to: c.apply_to,
+            ...(c.type === 'threshold' && {
+              threshold_entry: c.threshold_entry,
+              threshold_exit: c.threshold_exit
+            }),
+            ...(c.type === 'crossover' && {
+              crossover_strategy: c.crossover_strategy
+            }),
+            ...(c.type === 'multi_dataset_crossover' && {
+              multi_dataset_crossover_strategy: c.multi_dataset_crossover_strategy
+            }),
+            bitcoin_price_condition: c.bitcoin_price_condition,
+            logic: c.logic
+          }))
+        };
+        onStrategyChange(updatedStrategy);
+      }, 0);
       return newParams;
     });
   };
