@@ -75,8 +75,8 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
   const [commonParams, setCommonParams] = useState({
     period: '1y' as const,
     init_cash: 10000,
-    fees: 0.00045,
-    slippage: 0.0002
+    fees: 0.00045, // 0.045% en decimal
+    slippage: 0.002 // 0.2% en decimal
   });
 
   // Función para actualizar parámetros comunes y reconstruir la estrategia
@@ -306,23 +306,23 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-blue-900">Comisiones</Label>
+              <Label className="text-sm font-medium text-blue-900">Comisiones (%)</Label>
                                     <Input 
                         type="number" 
-                        step="0.00001" 
-                        value={commonParams.fees}
-                        onChange={(e) => updateCommonParams({ fees: parseFloat(e.target.value) || 0.00045 })}
+                        step="0.01" 
+                        value={commonParams.fees * 100}
+                        onChange={(e) => updateCommonParams({ fees: (parseFloat(e.target.value) || 0.045) / 100 })}
                         className="h-10" 
                       />
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-blue-900">Slippage</Label>
+              <Label className="text-sm font-medium text-blue-900">Slippage (%)</Label>
               <Input
                 type="number"
-                step="0.00001"
-                value={commonParams.slippage}
-                                        onChange={(e) => updateCommonParams({ slippage: parseFloat(e.target.value) || 0.0002 })}
+                step="0.01"
+                value={commonParams.slippage * 100}
+                onChange={(e) => updateCommonParams({ slippage: (parseFloat(e.target.value) || 0.2) / 100 })}
                 className="h-10"
               />
             </div>
