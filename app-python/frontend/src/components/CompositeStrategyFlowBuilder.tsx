@@ -296,7 +296,7 @@ export function CompositeStrategyFlowBuilder({ datasets, onStrategyChange }: Com
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-blue-900">Capital Inicial</Label>
+              <Label className="text-sm font-medium text-blue-900">Capital Inicial ($)</Label>
                                     <Input 
                         type="number" 
                         value={commonParams.init_cash}
