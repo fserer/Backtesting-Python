@@ -824,7 +824,7 @@ export function ParamsForm({ onSubmit, isRunning, selectedDataset, onDatasetSele
               <>
                 <Play className="h-4 w-4 mr-2" />
                 {strategyMode === 'composite' ? 
-                  (!compositeStrategy ? 'Construye una Estrategia Compuesta' : 'Ejecutar Backtest Compuesto') :
+                  'Ejecutar Backtest Compuesto' :
                   !selectedDataset ? 'Selecciona un Dataset' : 
                   formData.strategy_type === 'multi_dataset_crossover' && (!selectedDataset1 || !selectedDataset2 || !selectedPriceDataset) ? 
                   'Selecciona todos los Datasets' : 'Ejecutar Backtest'}
